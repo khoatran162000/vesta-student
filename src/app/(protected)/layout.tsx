@@ -30,6 +30,7 @@ const PAID_NAV = [
   { href: "/tai-lieu", label: "Tài liệu", icon: FileText },
   { href: "/bai-tap", label: "Bài tập tương tác", icon: Target },
   { href: "/vo-ghi", label: "Vở ghi & Phản hồi", icon: MessageSquareText },
+  { href: "/bao-cao", label: "Báo cáo định kỳ", icon: ClipboardList },
 ];
 
 // Mục dành cho học viên CHƯA thanh toán (2 tab)
@@ -65,7 +66,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-cream">
-      <aside className="sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-silver/30 bg-white">
+      <aside className="print:hidden sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-silver/30 bg-white">
         <div className="border-b border-silver/20 px-5 py-5">
           <p className="text-xl font-bold text-royal">VESTA</p>
           <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-muted">Student Portal</p>
@@ -108,7 +109,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      <main className="flex-1 p-6">{children}</main>
+      <main className="flex-1 p-6 print:p-0">{children}</main>
     </div>
   );
 }
