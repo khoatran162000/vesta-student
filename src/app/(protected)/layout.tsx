@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
   TrendingUp, Target, NotebookPen, FileText, MessageSquareText,
-  PlayCircle, CalendarDays,
+  PlayCircle, CalendarDays, GraduationCap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -31,6 +31,7 @@ const PAID_NAV = [
   { href: "/bai-tap", label: "Bài tập tương tác", icon: Target },
   { href: "/vo-ghi", label: "Vở ghi & Phản hồi", icon: MessageSquareText },
   { href: "/bao-cao", label: "Báo cáo định kỳ", icon: ClipboardList },
+  { href: "/cuoi-khoa", label: "Kết quả cuối khóa", icon: GraduationCap },
 ];
 
 // Mục dành cho học viên CHƯA thanh toán (2 tab)
