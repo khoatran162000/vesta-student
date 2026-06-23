@@ -10,6 +10,7 @@ import {
 export interface PlayerGap {
   type: "TEXT" | "DROPDOWN" | "DRAG";
   options?: string[];   // dropdown
+  answers?: string[];   // chỉ có với DRAG (để dựng ngân hàng từ)
 }
 export interface GapDetail {
   id: string;
@@ -65,15 +66,14 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
 
   // Ngân hàng từ cho DRAG: gộp đáp án các gap DRAG (lấy phương án đầu) + distractors, xáo 1 lần
   const wordBank = useMemo(() => {
-    const dragAnswers: string[] = [];
-    Object.entries(gaps).forEach(([id, g]) => {
-      if (g.type === "DRAG") {
-        // dùng giá trị đúng nếu đã nộp; lúc làm thì chỉ cần nhãn — ta không biết đáp án, nên dùng options nếu có
-        // Thực tế đáp án bị ẩn → ngân hàng từ phải do server cấp. Tạm: gộp distractors + các giá trị đã từng thả.
+    const words: string[] = [];
+    Object.values(gaps).forEach((g: any) => {
+      if (g.type === "DRAG" && Array.isArray(g.answers) && g.answers[0]) {
+        words.push(g.answers[0]);
       }
     });
-    // Ngân hàng = distractors (server nên trả kèm danh sách từ cho DRAG; tạm dùng distractors)
-    return [...distractors].sort(() => Math.random() - 0.5);
+    const all = [...words, ...distractors];
+    return Array.from(new Set(all)).sort(() => Math.random() - 0.5);
   }, [gaps, distractors]);
 
   // Parse content thành các mảnh: text hoặc gap
