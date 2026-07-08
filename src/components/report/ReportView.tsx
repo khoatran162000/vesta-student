@@ -1,7 +1,7 @@
 // FILE: src/components/report/ReportView.tsx
 // Render báo cáo định kỳ: nếu có HTML dán → iframe cách ly; nếu không → renderer bảng VESTA
 "use client";
-const COLS = [
+const DEFAULT_COLS = [
   { key: "bai1", label: "Bài .1" }, { key: "bai2", label: "Bài .2" },
   { key: "bai3", label: "Bài .3" }, { key: "bai4", label: "Bài .4" },
   { key: "bai5", label: "Bài .5" }, { key: "bai6", label: "Bài .6" },
@@ -26,7 +26,7 @@ export interface ReportViewData {
   periodTo?: string | null;
   dataFrom?: string | null;
   dataTo?: string | null;
-  grid?: { units: any[] };
+  grid?: { columns?: { key: string; label: string; maroon?: boolean }[]; units: any[] };
   teacherNote?: { strengths?: string; reminders?: string; homework?: string; attitude?: string } | null;
   html?: string | null;       // NEW
   shareUrl?: string | null;   // NEW
@@ -71,6 +71,7 @@ export default function ReportView({ data }: { data: ReportViewData }) {
 
   // ─── Nhánh 2: report cấu trúc (giữ nguyên như cũ) ───
   const units = data.grid?.units || [];
+  const COLS = (data.grid?.columns && data.grid.columns.length > 0) ? data.grid.columns : DEFAULT_COLS;
   const note = data.teacherNote || {};
   const noteFields = [
     { key: "strengths", label: "Điểm mạnh" },
