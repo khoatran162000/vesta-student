@@ -1,14 +1,12 @@
 // FILE: src/components/report/FinalReportView.tsx
-// Render báo cáo cuối khóa giống mẫu VESTA (student xem + in)
+// Render báo cáo cuối khóa: nếu có HTML dán → iframe cách ly; nếu không → renderer cấu trúc VESTA
 "use client";
-
 const SKILL_COLS = [
   { key: "readingA", label: "Reading A" }, { key: "readingB", label: "Reading B" },
   { key: "listeningA", label: "Listening A / Reading C" }, { key: "listeningB", label: "Listening B / Transcript" },
   { key: "writing", label: "Writing" }, { key: "speaking", label: "Speaking" },
   { key: "lectures", label: "Lectures", maroon: true }, { key: "examPractice", label: "Exam Practice", maroon: true },
 ];
-
 const REVIEW_CARDS = [
   { key: "reading", label: "📖 Reading", cls: "b" },
   { key: "listening", label: "🎧 Listening", cls: "g" },
@@ -17,19 +15,16 @@ const REVIEW_CARDS = [
   { key: "speaking", label: "🗣️ Speaking", cls: "a" },
   { key: "notebook", label: "📓 Vở ghi", cls: "" },
 ];
-
 const PRED_BOXES = [
   { key: "listening", label: "🎧 Nghe" }, { key: "reading", label: "📖 Đọc" },
   { key: "writing", label: "✍️ Viết" }, { key: "speaking", label: "🗣️ Nói" },
 ];
-
 function scoreClass(score: number | null): string {
   if (score === null || isNaN(score)) return "";
   if (score >= 85) return "hi";
   if (score >= 60) return "mi";
   return "lo";
 }
-
 export interface FinalReportViewData {
   student?: { fullName?: string; studentCode?: string | null; course?: string | null };
   course?: string | null;
@@ -38,15 +33,53 @@ export interface FinalReportViewData {
   review?: Record<string, string> | null;
   prediction?: any;
   orientation?: { advice?: string; classInfo?: string } | null;
+  html?: string | null;       // NEW
+  shareUrl?: string | null;   // NEW
 }
-
 export default function FinalReportView({ data }: { data: FinalReportViewData }) {
+  // ─── Nhánh 1: report dạng HTML dán → render iframe cách ly ───
+  if (data.html && data.html.trim()) {
+    return (
+      <div className="html-report">
+        <iframe
+          title="Báo cáo cuối khóa"
+          srcDoc={data.html}
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          className="report-frame"
+        />
+        {data.shareUrl && (
+          <div className="html-report-actions print:hidden">
+            <a href={data.shareUrl} target="_blank" rel="noopener noreferrer" className="open-full">
+              Mở bản đầy đủ ↗
+            </a>
+          </div>
+        )}
+        <style jsx>{`
+          .html-report { max-width:1100px; margin:0 auto; }
+          .report-frame {
+            width:100%; min-height:1400px; border:1px solid #E5E7EB; border-radius:12px;
+            background:#fff; box-shadow:0 2px 16px rgba(0,0,0,.08); display:block;
+          }
+          .html-report-actions { margin-top:12px; text-align:center; }
+          .open-full {
+            display:inline-block; padding:8px 16px; border-radius:8px;
+            background:#162A5A; color:#fff; font-size:13px; font-weight:600; text-decoration:none;
+          }
+          .open-full:hover { background:#0F1B3D; }
+          @media print {
+            .report-frame { min-height:0; height:auto; border:none; box-shadow:none; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ─── Nhánh 2: report cấu trúc (giữ nguyên như cũ) ───
   const units = data.skillGrid?.units || [];
   const review = data.review || {};
   const pred = data.prediction || {};
   const orient = data.orientation || {};
   const studentName = data.student?.fullName || "Học viên";
-
   return (
     <div className="final-doc">
       {/* Header */}
@@ -63,14 +96,12 @@ export default function FinalReportView({ data }: { data: FinalReportViewData })
           <div className="fr-r2">{data.course || ""} Final Course Report</div>
         </div>
       </div>
-
       {/* Info */}
       <div className="fr-info">
         <div><span className="fr-lb">Học sinh:</span> <b>{studentName}</b></div>
         <div><span className="fr-lb">Lớp:</span> {data.course || "—"}</div>
         <div><span className="fr-lb">LearnClick:</span> {data.learnclickUser || "—"}</div>
       </div>
-
       {/* 1. Quá trình tích lũy kĩ năng */}
       <div className="fr-sec">1. QUÁ TRÌNH TÍCH LŨY KĨ NĂNG</div>
       <div className="fr-table-wrap">
@@ -108,7 +139,6 @@ export default function FinalReportView({ data }: { data: FinalReportViewData })
           </tbody>
         </table>
       </div>
-
       {/* 2. Nhận xét cuối khóa */}
       <div className="fr-sec">2. NHẬN XÉT CUỐI KHÓA</div>
       {review.quickSummary && (
@@ -125,7 +155,6 @@ export default function FinalReportView({ data }: { data: FinalReportViewData })
           </div>
         ))}
       </div>
-
       {/* 3. Điểm dự đoán cuối khóa */}
       <div className="fr-sec">3. ĐIỂM DỰ ĐOÁN CUỐI KHÓA</div>
       <div className="fr-preds">
@@ -148,15 +177,12 @@ export default function FinalReportView({ data }: { data: FinalReportViewData })
           <div className="fr-atxt">{pred.note}</div>
         </div>
       )}
-
       {/* 4. Định hướng */}
       <div className="fr-sec">4. ĐỊNH HƯỚNG SAU KHÓA HỌC</div>
       {orient.advice && <p className="fr-orient">{orient.advice}</p>}
       {orient.classInfo && <div className="fr-classinfo">{orient.classInfo}</div>}
-
       {/* Footer */}
       <div className="fr-footer">VESTA UNI — Học Nhanh · Thi Chắc · Phá Tắc Band</div>
-
       <style jsx>{`
         .final-doc {
           --gold:#A9966F; --gold-light:#D9D2C2; --maroon:#7A1020; --maroon-dark:#4A0A14;
