@@ -1,7 +1,7 @@
 // FILE: src/components/report/FinalReportView.tsx
 // Render báo cáo cuối khóa: nếu có HTML dán → iframe cách ly; nếu không → renderer cấu trúc VESTA
 "use client";
-const SKILL_COLS = [
+const DEFAULT_SKILL_COLS = [
   { key: "readingA", label: "Reading A" }, { key: "readingB", label: "Reading B" },
   { key: "listeningA", label: "Listening A / Reading C" }, { key: "listeningB", label: "Listening B / Transcript" },
   { key: "writing", label: "Writing" }, { key: "speaking", label: "Speaking" },
@@ -29,7 +29,7 @@ export interface FinalReportViewData {
   student?: { fullName?: string; studentCode?: string | null; course?: string | null };
   course?: string | null;
   learnclickUser?: string | null;
-  skillGrid?: { units: any[] };
+  skillGrid?: { columns?: { key: string; label: string; maroon?: boolean }[]; units: any[] };
   review?: Record<string, string> | null;
   prediction?: any;
   orientation?: { advice?: string; classInfo?: string } | null;
@@ -76,6 +76,7 @@ export default function FinalReportView({ data }: { data: FinalReportViewData })
 
   // ─── Nhánh 2: report cấu trúc (giữ nguyên như cũ) ───
   const units = data.skillGrid?.units || [];
+  const SKILL_COLS = (data.skillGrid?.columns && data.skillGrid.columns.length > 0) ? data.skillGrid.columns : DEFAULT_SKILL_COLS;
   const review = data.review || {};
   const pred = data.prediction || {};
   const orient = data.orientation || {};
