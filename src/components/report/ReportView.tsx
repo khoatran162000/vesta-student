@@ -1,7 +1,6 @@
 // FILE: src/components/report/ReportView.tsx
-// Render báo cáo định kỳ giống mẫu VESTA (dùng cho student xem + in A4)
+// Render báo cáo định kỳ: nếu có HTML dán → iframe cách ly; nếu không → renderer bảng VESTA
 "use client";
-
 const COLS = [
   { key: "bai1", label: "Bài .1" }, { key: "bai2", label: "Bài .2" },
   { key: "bai3", label: "Bài .3" }, { key: "bai4", label: "Bài .4" },
@@ -9,7 +8,6 @@ const COLS = [
   { key: "examPractice", label: "Exam Practice", maroon: true },
   { key: "lectures", label: "Lectures", maroon: true },
 ];
-
 function scoreClass(score: number | null): string {
   if (score === null || isNaN(score)) return "";
   if (score >= 85) return "hi";
@@ -20,7 +18,6 @@ function fmtDate(d: string | null) {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("vi-VN"); } catch { return d as string; }
 }
-
 export interface ReportViewData {
   student?: { fullName?: string; studentCode?: string | null; course?: string | null };
   course?: string | null;
@@ -31,9 +28,48 @@ export interface ReportViewData {
   dataTo?: string | null;
   grid?: { units: any[] };
   teacherNote?: { strengths?: string; reminders?: string; homework?: string; attitude?: string } | null;
+  html?: string | null;       // NEW
+  shareUrl?: string | null;   // NEW
 }
-
 export default function ReportView({ data }: { data: ReportViewData }) {
+  // ─── Nhánh 1: report dạng HTML dán → iframe cách ly ───
+  if (data.html && data.html.trim()) {
+    return (
+      <div className="html-report">
+        <iframe
+          title="Báo cáo định kỳ"
+          srcDoc={data.html}
+          sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+          className="report-frame"
+        />
+        {data.shareUrl && (
+          <div className="html-report-actions print:hidden">
+            <a href={data.shareUrl} target="_blank" rel="noopener noreferrer" className="open-full">
+              Mở bản đầy đủ ↗
+            </a>
+          </div>
+        )}
+        <style jsx>{`
+          .html-report { max-width:1100px; margin:0 auto; }
+          .report-frame {
+            width:100%; min-height:1400px; border:1px solid #E5E7EB; border-radius:12px;
+            background:#fff; box-shadow:0 2px 16px rgba(0,0,0,.08); display:block;
+          }
+          .html-report-actions { margin-top:12px; text-align:center; }
+          .open-full {
+            display:inline-block; padding:8px 16px; border-radius:8px;
+            background:#162A5A; color:#fff; font-size:13px; font-weight:600; text-decoration:none;
+          }
+          .open-full:hover { background:#0F1B3D; }
+          @media print {
+            .report-frame { min-height:0; height:auto; border:none; box-shadow:none; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // ─── Nhánh 2: report cấu trúc (giữ nguyên như cũ) ───
   const units = data.grid?.units || [];
   const note = data.teacherNote || {};
   const noteFields = [
@@ -42,7 +78,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
     { key: "homework", label: "Bài tập về nhà" },
     { key: "attitude", label: "Thái độ học tập & ghi bài" },
   ] as const;
-
   return (
     <div className="report-doc">
       {/* Header */}
@@ -59,7 +94,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
           <div className="rp-r2">{data.course || "7+"} Weekly Progress Report</div>
         </div>
       </div>
-
       {/* Thông tin HS */}
       <div className="rp-info">
         <div><span className="rp-info-lb">Học sinh:</span> <b>{data.student?.fullName || "—"}</b></div>
@@ -69,7 +103,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
         <div><span className="rp-info-lb">Kỳ báo cáo đến:</span> {fmtDate(data.periodTo ?? null)}</div>
         <div><span className="rp-info-lb">Dữ liệu LearnClick:</span> {fmtDate(data.dataFrom ?? null)} – {fmtDate(data.dataTo ?? null)}</div>
       </div>
-
       {/* Bảng theo dõi */}
       <div className="rp-sec-title">Theo dõi LearnClick theo lộ trình {data.course || "7+"}</div>
       <div className="rp-table-wrap">
@@ -117,7 +150,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
           </tbody>
         </table>
       </div>
-
       {/* Nhận xét GV */}
       <div className="rp-sec-title">Nhận xét của giáo viên</div>
       <div className="rp-notes">
@@ -128,7 +160,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
           </div>
         ))}
       </div>
-
       {/* Ký */}
       <div className="rp-sign">
         <div className="rp-sign-col">
@@ -142,7 +173,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
           <div className="rp-sign-blank" />
         </div>
       </div>
-
       {/* Footer */}
       <div className="rp-footer">
         <div className="rp-mf-company">CÔNG TY TNHH <span>VESTA UNI</span></div>
@@ -151,7 +181,6 @@ export default function ReportView({ data }: { data: ReportViewData }) {
           <span>60 Hoàng Quốc Việt, Cầu Giấy, Hà Nội</span>
         </div>
       </div>
-
       <style jsx>{`
         .report-doc {
           --gold:#C9A84C; --gold-light:#E8D48B; --gold-dim:#9A7A32;
