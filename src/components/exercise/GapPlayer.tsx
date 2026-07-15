@@ -67,8 +67,6 @@ function escapeHtml(s: string): string {
 }
 function buildHostHtml(content: string): { html: string; isHtml: boolean } {
   const isHtml = looksLikeHtml(content);
-  // Bài cũ (text thuần): escape trước để ký tự lạ không thành thẻ.
-  // Bài HTML (dán từ LearnClick): giữ nguyên — do admin/GV soạn, cùng mức tin cậy như nhật ký HTML.
   const base = isHtml ? content : escapeHtml(content);
   const html = base.replace(TOKEN_RE, (_m, id) =>
     `<span data-gap-id="${String(id).replace(/"/g, "&quot;")}"></span>`
@@ -86,7 +84,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  // Ngân hàng từ cho DRAG: gộp đáp án các gap DRAG (lấy phương án đầu) + distractors, xáo 1 lần
   const wordBank = useMemo(() => {
     const words: string[] = [];
     Object.values(gaps).forEach((g: any) => {
@@ -98,14 +95,18 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
     return Array.from(new Set(all)).sort(() => Math.random() - 0.5);
   }, [gaps, distractors]);
 
-  // Bơm HTML một lần, rồi cắm ô nhập vào từng thẻ neo bằng portal
   const { html, isHtml } = useMemo(() => buildHostHtml(content || ""), [content]);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [slots, setSlots] = useState<{ id: string; el: HTMLElement }[]>([]);
 
+  // QUAN TRỌNG: bơm innerHTML THỦ CÔNG — KHÔNG dùng dangerouslySetInnerHTML.
+  // Nếu để React quản vùng này, mỗi lần nó dựng lại innerHTML là các span bị lìa khỏi DOM,
+  // portal cắm input vào span mồ côi → không hiện gì (đúng lỗi đợt 1).
+  // Cách này giống HtmlGapEditor bên admin — đã chạy ổn.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
+    host.innerHTML = html;
     const els = Array.from(host.querySelectorAll<HTMLElement>("[data-gap-id]"));
     setSlots(els.map((el) => ({ id: el.getAttribute("data-gap-id") || "", el })));
   }, [html]);
@@ -115,8 +116,8 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
   }
 
   function handleDragEnd(e: DragEndEvent) {
-    const wordId = String(e.active.id);                 // "word-xxx"
-    const overId = e.over ? String(e.over.id) : null;   // "drop-<gapId>"
+    const wordId = String(e.active.id);
+    const overId = e.over ? String(e.over.id) : null;
     if (!overId || !overId.startsWith("drop-")) return;
     const gapId = overId.replace("drop-", "");
     const label = wordId.replace(/^word-\d+-/, "");
@@ -125,7 +126,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
 
   const usedWords = new Set(Object.values(answers));
 
-  // ─── Một ô nhập cho gap id ───
   function renderField(id: string) {
     const g = gaps[id] || { type: "TEXT" as const };
     const d = detailMap[id];
@@ -170,7 +170,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
       <div
         ref={hostRef}
         className={isHtml ? "gap-html-body" : "whitespace-pre-wrap text-[1.05rem] leading-[2.4]"}
-        dangerouslySetInnerHTML={{ __html: html }}
       />
       {slots.map((s) => createPortal(renderField(s.id), s.el, s.id))}
     </div>
@@ -180,7 +179,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
 
   if (!hasDrag) return body;
 
-  // Có DRAG → bọc DndContext + ngân hàng từ
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       {!submitted && wordBank.length > 0 && (
