@@ -143,13 +143,17 @@ export default function FeedbackPage() {
                 </div>
               </details>
 
-              {fb.teacherComment && (
+              {(fb.commentHtml || fb.teacherComment) && (
                 <div className="rounded-lg border border-gold/30 bg-gold/5 p-3">
                   <p className="mb-1 flex items-center gap-2 text-[0.65rem] font-bold uppercase tracking-wider text-gold">
                     <MessageSquareText size={12} />Phản hồi từ GV
                     {fb.reviewer && <span className="font-normal text-muted">· {fb.reviewer.fullName}</span>}
                   </p>
-                  <p className="whitespace-pre-wrap text-sm text-[#1a1a2e]">{fb.teacherComment}</p>
+                  {fb.commentHtml ? (
+                    <div className="overflow-x-auto text-sm text-[#1a1a2e]" dangerouslySetInnerHTML={{ __html: fb.commentHtml }} />
+                  ) : (
+                    <p className="whitespace-pre-wrap text-sm text-[#1a1a2e]">{fb.teacherComment}</p>
+                  )}
                 </div>
               )}
             </div>
