@@ -1,7 +1,9 @@
 // FILE: src/components/exercise/GapPlayer.tsx
 // Render bài tập gap (LearnClick) cho học viên/khách làm + chấm + tô màu
+// content HỖ TRỢ CẢ HAI: HTML (bài dán từ LearnClick) hoặc text thuần (bài cũ) — tự nhận diện
 "use client";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext, useDraggable, useDroppable, DragEndEvent,
   PointerSensor, useSensor, useSensors,
@@ -41,7 +43,7 @@ function DraggableWord({ id, label, used }: { id: string; label: string; used: b
 }
 
 // ─── Ô thả (drop zone) cho gap DRAG ───
-function DropZone({ gapId, value, locked, state }: { gapId: string; value: string; locked: boolean; state: "" | "correct" | "wrong" }) {
+function DropZone({ gapId, value, state }: { gapId: string; value: string; state: "" | "correct" | "wrong" }) {
   const { setNodeRef, isOver } = useDroppable({ id: `drop-${gapId}` });
   const border = state === "correct" ? "border-green-400 bg-green-50"
     : state === "wrong" ? "border-red-400 bg-red-50"
@@ -52,6 +54,26 @@ function DropZone({ gapId, value, locked, state }: { gapId: string; value: strin
       {value || <span className="text-gray-300">kéo vào</span>}
     </span>
   );
+}
+
+// ─── Dựng HTML nền: đổi [[gap:N]] thành thẻ neo rỗng để cắm React portal ───
+const TOKEN_RE = /\[\[gap:([^\]]+)\]\]/g;
+
+function looksLikeHtml(s: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(s);
+}
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function buildHostHtml(content: string): { html: string; isHtml: boolean } {
+  const isHtml = looksLikeHtml(content);
+  // Bài cũ (text thuần): escape trước để ký tự lạ không thành thẻ.
+  // Bài HTML (dán từ LearnClick): giữ nguyên — do admin/GV soạn, cùng mức tin cậy như nhật ký HTML.
+  const base = isHtml ? content : escapeHtml(content);
+  const html = base.replace(TOKEN_RE, (_m, id) =>
+    `<span data-gap-id="${String(id).replace(/"/g, "&quot;")}"></span>`
+  );
+  return { html, isHtml };
 }
 
 export default function GapPlayer({ content, gaps, distractors = [], result, answers, onChange }: Props) {
@@ -76,70 +98,82 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
     return Array.from(new Set(all)).sort(() => Math.random() - 0.5);
   }, [gaps, distractors]);
 
-  // Parse content thành các mảnh: text hoặc gap
-  const parts = useMemo(() => content.split(/(\[\[gap:[^\]]+\]\])/g), [content]);
+  // Bơm HTML một lần, rồi cắm ô nhập vào từng thẻ neo bằng portal
+  const { html, isHtml } = useMemo(() => buildHostHtml(content || ""), [content]);
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const [slots, setSlots] = useState<{ id: string; el: HTMLElement }[]>([]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const els = Array.from(host.querySelectorAll<HTMLElement>("[data-gap-id]"));
+    setSlots(els.map((el) => ({ id: el.getAttribute("data-gap-id") || "", el })));
+  }, [html]);
 
   function setAns(id: string, val: string) {
     onChange({ ...answers, [id]: val });
   }
 
   function handleDragEnd(e: DragEndEvent) {
-    const wordId = String(e.active.id);          // "word-xxx"
-    const overId = e.over ? String(e.over.id) : null;  // "drop-<gapId>"
+    const wordId = String(e.active.id);                 // "word-xxx"
+    const overId = e.over ? String(e.over.id) : null;   // "drop-<gapId>"
     if (!overId || !overId.startsWith("drop-")) return;
     const gapId = overId.replace("drop-", "");
-    const label = wordId.replace(/^word-\d+-/, ""); // nhãn từ
+    const label = wordId.replace(/^word-\d+-/, "");
     setAns(gapId, label);
   }
 
   const usedWords = new Set(Object.values(answers));
 
+  // ─── Một ô nhập cho gap id ───
+  function renderField(id: string) {
+    const g = gaps[id] || { type: "TEXT" as const };
+    const d = detailMap[id];
+    const state: "" | "correct" | "wrong" = !submitted ? "" : d?.isCorrect ? "correct" : "wrong";
+    const fieldColor = state === "correct" ? "border-green-400 bg-green-50 text-green-800"
+      : state === "wrong" ? "border-red-400 bg-red-50 text-red-800"
+      : "border-gray-300";
+
+    let field;
+    if (g.type === "DROPDOWN") {
+      field = (
+        <select disabled={submitted} value={answers[id] || ""}
+          onChange={(e) => setAns(id, e.target.value)}
+          className={`mx-1 rounded-lg border px-2 py-1 text-sm ${fieldColor}`}>
+          <option value="">— chọn —</option>
+          {(g.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+      );
+    } else if (g.type === "DRAG") {
+      field = <DropZone gapId={id} value={answers[id] || ""} state={state} />;
+    } else {
+      field = (
+        <input type="text" disabled={submitted} value={answers[id] || ""}
+          onChange={(e) => setAns(id, e.target.value)}
+          placeholder="..." size={Math.max(6, (answers[id]?.length || 6))}
+          className={`mx-1 rounded-lg border px-2 py-0.5 text-sm ${fieldColor}`} />
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center align-baseline">
+        {field}
+        {submitted && !d?.isCorrect && (d?.correctAnswers?.length ?? 0) > 0 && (
+          <span className="ml-1 text-xs font-medium text-green-600">({d!.correctAnswers[0]})</span>
+        )}
+      </span>
+    );
+  }
+
   const body = (
-    <p className="text-[1.05rem] leading-[2.4]">
-      {parts.map((part, i) => {
-        const m = part.match(/^\[\[gap:([^\]]+)\]\]$/);
-        if (!m) return <span key={i}>{part}</span>;
-        const id = m[1];
-        const g = gaps[id] || { type: "TEXT" };
-        const d = detailMap[id];
-        const state: "" | "correct" | "wrong" = !submitted ? "" : d?.isCorrect ? "correct" : "wrong";
-
-        // màu khi đã nộp
-        const fieldColor = state === "correct" ? "border-green-400 bg-green-50 text-green-800"
-          : state === "wrong" ? "border-red-400 bg-red-50 text-red-800"
-          : "border-gray-300";
-
-        let field;
-        if (g.type === "DROPDOWN") {
-          field = (
-            <select key={i} disabled={submitted} value={answers[id] || ""}
-              onChange={(e) => setAns(id, e.target.value)}
-              className={`mx-1 rounded-lg border px-2 py-1 text-sm ${fieldColor}`}>
-              <option value="">— chọn —</option>
-              {(g.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          );
-        } else if (g.type === "DRAG") {
-          field = <DropZone key={i} gapId={id} value={answers[id] || ""} locked={submitted} state={state} />;
-        } else {
-          field = (
-            <input key={i} type="text" disabled={submitted} value={answers[id] || ""}
-              onChange={(e) => setAns(id, e.target.value)}
-              placeholder="..." size={Math.max(6, (answers[id]?.length || 6))}
-              className={`mx-1 rounded-lg border px-2 py-0.5 text-sm ${fieldColor}`} />
-          );
-        }
-
-        return (
-          <span key={i} className="inline-flex items-center">
-            {field}
-            {submitted && !d?.isCorrect && d?.correctAnswers?.length > 0 && (
-              <span className="ml-1 text-xs font-medium text-green-600">({d.correctAnswers[0]})</span>
-            )}
-          </span>
-        );
-      })}
-    </p>
+    <div className={isHtml ? "overflow-x-auto" : ""}>
+      <div
+        ref={hostRef}
+        className={isHtml ? "gap-html-body" : "whitespace-pre-wrap text-[1.05rem] leading-[2.4]"}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+      {slots.map((s) => createPortal(renderField(s.id), s.el, s.id))}
+    </div>
   );
 
   const hasDrag = Object.values(gaps).some((g) => g.type === "DRAG");
