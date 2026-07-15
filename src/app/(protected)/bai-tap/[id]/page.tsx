@@ -39,6 +39,8 @@ export default function DoExercisePage() {
   }
 
   async function handleSubmit() {
+    const missing = totalCount - answeredCount;
+    if (missing > 0 && !confirm(`Còn ${missing} chỗ chưa điền — bỏ trống sẽ tính là sai. Nộp bài luôn?`)) return;
     setSubmitting(true);
     const res = await api.post(`/interactive/${id}/submit`, { answers });
     setSubmitting(false);
@@ -86,21 +88,17 @@ export default function DoExercisePage() {
 
   const gapIds = isGapEx ? Object.keys(gaps) : [];
 
-  let totalCount: number;
-  let answeredCount: number;
-  let allAnswered: boolean;
+  let totalCount = 0;
+  let answeredCount = 0;
   if (isGapEx) {
     totalCount = gapIds.length;
     answeredCount = gapIds.filter((gid) => answers[gid] !== undefined && String(answers[gid]).trim() !== "").length;
-    allAnswered = answeredCount === totalCount && totalCount > 0;
   } else if (isMatching) {
     totalCount = matchingData.pairs.length;
     answeredCount = matchingData.pairs.filter((p) => answers[p.id] !== undefined && String(answers[p.id]).trim() !== "").length;
-    allAnswered = answeredCount === totalCount && totalCount > 0;
   } else {
     totalCount = questions.length;
     answeredCount = Object.keys(answers).filter((k) => answers[k] !== undefined && answers[k] !== "").length;
-    allAnswered = questions.every((q: any) => answers[q.id] !== undefined && answers[q.id] !== "");
   }
 
   return (
@@ -257,7 +255,7 @@ export default function DoExercisePage() {
       {!result && (
         <button
           onClick={handleSubmit}
-          disabled={submitting || !allAnswered}
+          disabled={submitting || answeredCount === 0}
           className="btn-primary mt-6 w-full justify-center py-3.5 disabled:opacity-60"
         >
           {submitting ? (
