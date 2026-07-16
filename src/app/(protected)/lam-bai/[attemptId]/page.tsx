@@ -63,14 +63,28 @@ export default function ExamEnginePage() {
           return;
         }
       }
-      // Nếu F5 → gọi API lấy lại (resume)
+      // Nếu F5 / mất mạng / đóng nhầm tab → gọi API lấy lại bài đang làm dở
       try {
-        // Cần lấy examId từ attempt — tạm dùng cách khác
-        setLoading(false);
-      } catch { setLoading(false); }
+        const res = await api.get(`/student/attempts/${attemptId}`);
+        if (res.success) {
+          const d = res.data;
+          setExam(d.exam);
+          setQuestions(d.exam.questions || []);
+          setAnswers(d.answers || {});
+          setNotes(d.studentNotes || {});
+          setStartTime(new Date(d.startTime));   // giờ tính từ DB → F5 không reset đồng hồ
+          setDuration(d.exam.duration);
+        } else {
+          alert(res.message || "Không tải được bài thi");
+          router.push("/de-thi");
+        }
+      } catch {
+        alert("Lỗi kết nối — không tải được bài thi");
+        router.push("/de-thi");
+      } finally { setLoading(false); }
     }
     load();
-  }, [attemptId]);
+  }, [attemptId, router]);
 
   // Timer — đếm ngược dựa trên startTime thực tế (chống F5)
   useEffect(() => {
