@@ -76,6 +76,8 @@ export default function DoExercisePage() {
   // Bài kiểu GAP (LearnClick): có content + gaps
   const gaps = exercise.gaps || null;
   const isGapEx = !!exercise.content && gaps && typeof gaps === "object" && Object.keys(gaps).length > 0;
+  // Bài HTML (dán từ LearnClick) cần khung rộng; bài text thường giữ 760px cho dễ đọc
+  const isHtmlGap = isGapEx && /<[a-z][\s\S]*>/i.test(exercise.content || "");
 
   // Bài MATCHING: questions = { pairs:[{id,left}], choices:[...] }
   const isMatching = exercise.type === "MATCHING";
@@ -102,7 +104,7 @@ export default function DoExercisePage() {
   }
 
   return (
-    <div className="mx-auto max-w-[760px]">
+    <div className={`mx-auto ${isHtmlGap ? "max-w-[1200px]" : "max-w-[760px]"}`}>
       <Link
         href="/bai-tap"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-royal"

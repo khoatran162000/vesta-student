@@ -167,6 +167,15 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
 
   const body = (
     <div className={isHtml ? "overflow-x-auto" : ""}>
+      {isHtml && (
+        <style>{`
+          /* HTML dán từ LearnClick fix cứng width="1300" → ép co vừa khung, hết lướt ngang.
+             Đổi lại: cột hẹp hơn bản gốc, chữ trong ô xuống dòng nhiều hơn. */
+          .gap-html-body table { width: 100% !important; max-width: 100% !important; }
+          .gap-html-body td, .gap-html-body th { overflow-wrap: anywhere; }
+          .gap-html-body img, .gap-html-body iframe, .gap-html-body video { max-width: 100%; }
+        `}</style>
+      )}
       <div
         ref={hostRef}
         className={isHtml ? "gap-html-body" : "whitespace-pre-wrap text-[1.05rem] leading-[2.4]"}
