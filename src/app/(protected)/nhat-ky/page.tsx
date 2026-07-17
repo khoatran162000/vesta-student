@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Calendar, Clock, BookmarkCheck, Lock } from "lucide-react";
 import Link from "next/link";
+import HtmlFrame from "@/components/HtmlFrame";
 
 export default function DiaryPage() {
   const { user, loading: authLoading } = useAuth();
@@ -62,8 +63,8 @@ export default function DiaryPage() {
                 {d.creator && <span className="text-[0.65rem] text-muted">GV: {d.creator.fullName}</span>}
               </div>
               {d.contentHtml
-                ? <div className="prose prose-sm max-w-none text-[#1a1a2e]" dangerouslySetInnerHTML={{ __html: d.contentHtml }} />
-                : <p className="text-sm leading-relaxed text-[#1a1a2e]">{d.topic}</p>}
+                ? <div className="-mx-5 overflow-hidden rounded-lg border border-silver/20"><HtmlFrame html={d.contentHtml} /></div>
+                : <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#1a1a2e]">{d.topic}</p>}
               {d.homework && (
                 <div className="mt-3 flex gap-2 rounded-lg bg-amber-50 px-3 py-2">
                   <BookmarkCheck size={16} className="mt-0.5 shrink-0 text-amber-600" />

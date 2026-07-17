@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { FileText, Video, Link2, FileCode, ExternalLink, Lock, X } from "lucide-react";
 import Link from "next/link";
+import HtmlFrame from "@/components/HtmlFrame";
 
 function getIcon(fileType?: string) {
   const t = (fileType || "").toUpperCase();
@@ -91,8 +92,8 @@ export default function MaterialsPage() {
               <h3 className="truncate text-base font-bold text-royal">{reading.title}</h3>
               <button onClick={() => setReading(null)} className="text-muted hover:text-royal"><X size={20} /></button>
             </div>
-            <div className="overflow-auto p-5">
-              <div dangerouslySetInnerHTML={{ __html: reading.contentHtml }} />
+            <div className="overflow-auto">
+              <HtmlFrame html={reading.contentHtml} />
             </div>
           </div>
         </div>

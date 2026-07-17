@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
 import { Send, Loader2, CheckCircle2, Clock, MessageSquareText, Lock } from "lucide-react";
 import Link from "next/link";
+import HtmlFrame from "@/components/HtmlFrame";
 
 export default function FeedbackPage() {
   const { user, loading: authLoading } = useAuth();
@@ -150,7 +151,7 @@ export default function FeedbackPage() {
                     {fb.reviewer && <span className="font-normal text-muted">· {fb.reviewer.fullName}</span>}
                   </p>
                   {fb.commentHtml ? (
-                    <div className="overflow-x-auto text-sm text-[#1a1a2e]" dangerouslySetInnerHTML={{ __html: fb.commentHtml }} />
+                    <div className="-mx-3 mt-1 overflow-hidden rounded"><HtmlFrame html={fb.commentHtml} minHeight={80} /></div>
                   ) : (
                     <p className="whitespace-pre-wrap text-sm text-[#1a1a2e]">{fb.teacherComment}</p>
                   )}
