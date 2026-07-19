@@ -14,6 +14,9 @@ export interface AuthUser {
   course?: string | null;
   regStatus?: string | null;
   isPaid?: boolean;
+  studyFlag?: boolean;
+  lockedAt?: string | null;
+  locked?: boolean;
 }
 
 export function useAuth() {
@@ -33,6 +36,7 @@ export function useAuth() {
           const u: AuthUser = data.data;
           // Học viên đã thanh toán: regStatus = CONFIRMED hoặc PAID
           u.isPaid = u.regStatus === "CONFIRMED" || u.regStatus === "PAID";
+          u.locked = !!u.lockedAt;   // khoá tạm (phương án A: chặn phần học, vẫn đăng nhập được)
           setUser(u);
         }
       } catch {} finally {

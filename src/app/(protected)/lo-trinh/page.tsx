@@ -21,13 +21,19 @@ export default function RoadmapPage() {
   if (authLoading || loading)
     return <div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-4 border-gold border-t-transparent" /></div>;
 
-  if (!user?.isPaid)
+  if (!user?.isPaid || user?.locked)
     return (
       <div className="mx-auto max-w-[700px] py-20 text-center">
         <Lock size={48} className="mx-auto mb-4 text-amber-600" />
-        <h2 className="text-xl font-bold text-royal">Tính năng dành cho học viên đã ghi danh</h2>
-        <p className="mt-2 text-sm text-muted">Vui lòng hoàn tất thanh toán để xem lộ trình học 15 tuần.</p>
-        <Link href="/dashboard" className="btn-primary mt-6 inline-flex">← Quay về Tổng quan</Link>
+        <h2 className="text-xl font-bold text-royal">
+          {user?.locked ? "Tài khoản đang tạm khoá phần học" : "Tính năng dành cho học viên đã ghi danh"}
+        </h2>
+        <p className="mt-2 text-sm text-muted">
+          {user?.locked
+            ? "Bạn chưa hoàn thành đủ 4 bài tập tuần qua. Hãy vào mục Bài tập tương tác làm đủ 4 bài đạt ≥85% để mở lại, hoặc liên hệ trung tâm."
+            : "Vui lòng liên hệ trung tâm để được kích hoạt."}
+        </p>
+        <Link href="/bai-tap" className="btn-primary mt-6 inline-flex">→ Đến Bài tập tương tác</Link>
       </div>
     );
 
