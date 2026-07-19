@@ -1,25 +1,32 @@
-// FILE: src/app/(protected)/ki-nang/page.tsx — Tích lũy kĩ năng
+// FILE: src/app/(protected)/ki-nang/page.tsx — Bảng tiến độ học tập (hệ thống tự điền %)
 "use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
-import { BookOpen, Headphones, PenTool, Mic, Lock, TrendingUp } from "lucide-react";
+import { Lock, TrendingUp, CheckCircle2, Circle, Trophy, FileText } from "lucide-react";
 import Link from "next/link";
 
-const SKILLS = [
-  { key: "reading", label: "Reading", icon: BookOpen, color: "bg-blue-50 text-blue-600", borderColor: "border-blue-200" },
-  { key: "listening", label: "Listening", icon: Headphones, color: "bg-purple-50 text-purple-600", borderColor: "border-purple-200" },
-  { key: "writing", label: "Writing", icon: PenTool, color: "bg-amber-50 text-amber-600", borderColor: "border-amber-200" },
-  { key: "speaking", label: "Speaking", icon: Mic, color: "bg-pink-50 text-pink-600", borderColor: "border-pink-200" },
-];
+interface ExProgress {
+  exerciseId: string; title: string; type: string;
+  attempted: boolean; bestScore: number | null; attemptCount: number; lastAttemptAt: string | null;
+}
+interface ExamProg { examTitle: string; score: number | null; totalScore: number | null; date: string | null; }
 
-export default function SkillsPage() {
+const scoreColor = (s: number | null) =>
+  s === null ? "text-muted"
+  : s >= 85 ? "text-green-600"
+  : s >= 50 ? "text-amber-600"
+  : "text-red-500";
+const barColor = (s: number) => s >= 85 ? "bg-green-500" : s >= 50 ? "bg-amber-500" : "bg-red-400";
+
+export default function ProgressPage() {
   const { user, loading: authLoading } = useAuth();
-  const [stats, setStats] = useState<any>({});
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get("/student/dashboard").then((res) => { if (res.success) setStats(res.data?.stats || {}); })
+    api.get("/student/progress")
+      .then((res) => { if (res.success) setData(res.data); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,73 +38,134 @@ export default function SkillsPage() {
       <div className="mx-auto max-w-[700px] py-20 text-center">
         <Lock size={48} className="mx-auto mb-4 text-amber-600" />
         <h2 className="text-xl font-bold text-royal">Tính năng dành cho học viên đã ghi danh</h2>
-        <p className="mt-2 text-sm text-muted">Vui lòng hoàn tất thanh toán để theo dõi tiến độ 4 kĩ năng.</p>
         <Link href="/dashboard" className="btn-primary mt-6 inline-flex">← Quay về Tổng quan</Link>
       </div>
     );
 
-  const overallAvg = stats.averageScore ?? null;
-  const totalAttempts = stats.totalAttempts || 0;
+  const s = data?.summary || {};
+  const interactive: ExProgress[] = data?.interactive || [];
+  const exams: ExamProg[] = data?.exams || [];
 
   return (
     <div className="mx-auto max-w-[900px]">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-royal">Tích lũy kĩ năng</h1>
-        <p className="mt-1 text-sm text-muted">Theo dõi tiến độ 4 kĩ năng IELTS qua các bài luyện đã làm</p>
+        <h1 className="text-2xl font-bold text-royal">Bảng tiến độ học tập</h1>
+        <p className="mt-1 text-sm text-muted">Hệ thống tự động cập nhật theo bài tập và bài thi bạn đã làm</p>
       </div>
 
-      {/* Overall */}
-      <div className="card mb-6 flex items-center gap-4 bg-gradient-to-br from-gold/10 to-amber-50">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gold/20 text-gold">
-          <TrendingUp size={28} />
-        </div>
-        <div className="flex-1">
-          <p className="text-xs uppercase tracking-wider text-muted">Điểm trung bình chung</p>
-          <p className="text-3xl font-bold text-royal">{overallAvg ?? "—"}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs uppercase tracking-wider text-muted">Tổng lượt luyện</p>
-          <p className="text-2xl font-bold text-[#1a1a2e]">{totalAttempts}</p>
-        </div>
-      </div>
-
-      {/* 4 skills */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        {SKILLS.map((s) => {
-          const skillStats = stats[s.key] || {};
-          const count = skillStats.count || 0;
-          const avg = skillStats.average ?? null;
-          const best = skillStats.best ?? null;
-          return (
-            <div key={s.key} className={`card border-2 ${s.borderColor}`}>
-              <div className="mb-3 flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.color}`}><s.icon size={20} /></div>
-                <div>
-                  <h3 className="text-base font-bold text-royal">{s.label}</h3>
-                  <p className="text-xs text-muted">{count} bài đã làm</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-lg bg-cream/60 p-2">
-                  <p className="text-[0.65rem] uppercase text-muted">Điểm TB</p>
-                  <p className="text-lg font-bold text-[#1a1a2e]">{avg ?? "—"}</p>
-                </div>
-                <div className="rounded-lg bg-cream/60 p-2">
-                  <p className="text-[0.65rem] uppercase text-muted">Cao nhất</p>
-                  <p className="text-lg font-bold text-gold">{best ?? "—"}</p>
-                </div>
-              </div>
-              <Link href={`/de-thi?skill=${s.key}`} className="mt-3 block rounded-lg bg-royal/8 py-2 text-center text-xs font-semibold text-royal hover:bg-royal/15">
-                Luyện thêm →
-              </Link>
+      {/* Tổng quan */}
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+        <div className="card bg-gradient-to-br from-gold/10 to-amber-50">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold/20 text-gold"><TrendingUp size={22} /></div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted">Hoàn thành chung</p>
+              <p className="text-2xl font-bold text-royal">{s.overallPercent ?? 0}%</p>
             </div>
-          );
-        })}
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-green-50 text-green-600"><Trophy size={22} /></div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted">Bài đạt (≥85%)</p>
+              <p className="text-2xl font-bold text-[#1a1a2e]">{s.passedExercises ?? 0}<span className="text-base text-muted">/{s.totalExercises ?? 0}</span></p>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><FileText size={22} /></div>
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted">Bài thi đã làm</p>
+              <p className="text-2xl font-bold text-[#1a1a2e]">{s.totalExams ?? 0}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <p className="mt-6 text-center text-xs text-muted">
-        💡 Dữ liệu chi tiết theo kĩ năng phụ thuộc vào việc đề thi được gắn category. Nếu chưa thấy đủ, hãy nhờ giáo viên gán category cho bài thi.
-      </p>
+      {/* Bảng bài tập tương tác */}
+      <div className="card mb-6 !p-0 overflow-hidden">
+        <div className="border-b border-silver/20 bg-cream px-5 py-3">
+          <h2 className="font-bold text-royal">Bài tập tương tác</h2>
+          <p className="text-xs text-muted">Mỗi bài lấy điểm cao nhất trong các lần bạn làm</p>
+        </div>
+        {interactive.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted">Chưa có bài tập nào được giao.</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-silver/20 text-xs text-muted">
+                <th className="px-5 py-2.5 font-semibold">Bài tập</th>
+                <th className="px-3 py-2.5 font-semibold">Số lần làm</th>
+                <th className="px-5 py-2.5 font-semibold w-[40%]">Kết quả cao nhất</th>
+              </tr>
+            </thead>
+            <tbody>
+              {interactive.map((ex) => (
+                <tr key={ex.exerciseId} className="border-b border-silver/10">
+                  <td className="px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      {ex.bestScore !== null && ex.bestScore >= 85
+                        ? <CheckCircle2 size={15} className="shrink-0 text-green-500" />
+                        : <Circle size={15} className="shrink-0 text-silver" />}
+                      <span className="font-medium text-[#1a1a2e]">{ex.title}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-muted">{ex.attempted ? `${ex.attemptCount} lần` : "—"}</td>
+                  <td className="px-5 py-3">
+                    {ex.attempted ? (
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-cream-dark">
+                          <div className={`h-full rounded-full ${barColor(ex.bestScore ?? 0)}`} style={{ width: `${ex.bestScore ?? 0}%` }} />
+                        </div>
+                        <span className={`w-12 text-right text-sm font-bold ${scoreColor(ex.bestScore)}`}>{ex.bestScore}%</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted">Chưa làm</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Bảng điểm thi */}
+      <div className="card !p-0 overflow-hidden">
+        <div className="border-b border-silver/20 bg-cream px-5 py-3">
+          <h2 className="font-bold text-royal">Điểm bài thi</h2>
+          <p className="text-xs text-muted">Bài thi không tính vào phần trăm hoàn thành ở trên</p>
+        </div>
+        {exams.length === 0 ? (
+          <p className="py-10 text-center text-sm text-muted">Chưa làm bài thi nào.</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-silver/20 text-xs text-muted">
+                <th className="px-5 py-2.5 font-semibold">Đề thi</th>
+                <th className="px-3 py-2.5 font-semibold">Điểm</th>
+                <th className="px-5 py-2.5 font-semibold">Ngày làm</th>
+              </tr>
+            </thead>
+            <tbody>
+              {exams.map((e, i) => (
+                <tr key={i} className="border-b border-silver/10">
+                  <td className="px-5 py-3 font-medium text-[#1a1a2e]">{e.examTitle}</td>
+                  <td className="px-3 py-3">
+                    <span className="font-bold text-royal">{e.score ?? "—"}</span>
+                    {e.totalScore ? <span className="text-xs text-muted">/{e.totalScore}</span> : null}
+                  </td>
+                  <td className="px-5 py-3 text-muted">
+                    {e.date ? new Date(e.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
