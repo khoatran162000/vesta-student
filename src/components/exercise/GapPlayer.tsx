@@ -11,8 +11,9 @@ import {
 
 export interface PlayerGap {
   type: "TEXT" | "DROPDOWN" | "DRAG";
-  options?: string[];   // dropdown
-  answers?: string[];   // chỉ có với DRAG (để dựng ngân hàng từ)
+  options?: string[];
+  answers?: string[];
+  hint?: string;
 }
 export interface GapDetail {
   id: string;
@@ -158,6 +159,7 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
     return (
       <span className="inline-flex items-center align-baseline">
         {field}
+        {!submitted && g.hint && <HintButton hint={g.hint} />}
         {submitted && !d?.isCorrect && (d?.correctAnswers?.length ?? 0) > 0 && (
           <span className="ml-1 text-xs font-medium text-green-600">({d!.correctAnswers[0]})</span>
         )}
@@ -199,5 +201,22 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
       )}
       {body}
     </DndContext>
+  );
+}
+
+// ─── Nút gợi ý 💡 cạnh gap ───
+function HintButton({ hint }: { hint: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative mx-0.5 inline-flex">
+      <button type="button" onClick={() => setShow((s) => !s)}
+        title="Xem gợi ý"
+        className="text-sm leading-none opacity-70 hover:opacity-100">💡</button>
+      {show && (
+        <span className="absolute bottom-full left-1/2 z-50 mb-1 block w-max max-w-[240px] -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+          {hint}
+        </span>
+      )}
+    </span>
   );
 }
