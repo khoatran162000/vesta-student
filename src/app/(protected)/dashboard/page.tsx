@@ -142,7 +142,7 @@ export default function DashboardPage() {
 
       {/* Bottom CTA */}
       <div className="flex gap-4">
-        <Link href="/de-thi" className="btn-primary flex-1 justify-center py-4 text-base">Làm bài thi →</Link>
+        <Link href="/de-thi" className="btn-primary flex-1 justify-center py-4 text-base">Luyện Kĩ Năng →</Link>
         <Link href="/lich-su" className="btn-secondary flex-1 justify-center py-4 text-base">Xem lịch sử</Link>
       </div>
     </div>

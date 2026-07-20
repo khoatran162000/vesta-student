@@ -16,8 +16,8 @@ const BASE_NAV = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
 ];
 const TAIL_NAV = [
-  { href: "/de-thi", label: "Làm bài thi", icon: BookOpen },
-  { href: "/lich-su", label: "Lịch sử thi", icon: ClipboardList },
+  { href: "/de-thi", label: "Luyện Kĩ Năng", icon: BookOpen },
+  { href: "/lich-su", label: "Điểm Tích Lũy", icon: ClipboardList },
   { href: "/thong-bao", label: "Thông báo", icon: Bell },
   { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
 ];
