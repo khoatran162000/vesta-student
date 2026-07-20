@@ -4,17 +4,14 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, Save, Send, AlertTriangle, ChevronLeft, ChevronRight, Loader2, StickyNote, Ban } from "lucide-react";
 import { api, getImageUrl } from "@/lib/api";
-
 // Nội dung câu hỏi có thẻ HTML? → hiện trên "tờ giấy" trắng cho dễ đọc
 function isHtmlContent(s: string) {
   return /<[a-z][\s\S]*>/i.test(s || "");
 }
-
 export default function ExamEnginePage() {
   const params = useParams();
   const attemptId = params.attemptId as string;
   const router = useRouter();
-
   const [exam, setExam] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -30,10 +27,10 @@ export default function ExamEnginePage() {
   const [showNote, setShowNote] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState("");
   const [blockMsg, setBlockMsg] = useState("");
+  const [isGraded, setIsGraded] = useState(true);
   const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const blockMsgRef = useRef<NodeJS.Timeout | null>(null);
-
   // Chặn sao chép / dán / chuột phải / kéo-thả trong phòng thi.
   // LƯU Ý: đây là RÀO CẢN, không phải khoá tuyệt đối — HS quyết tâm vẫn có thể
   // mở DevTools, tắt JS, hoặc chụp màn hình. Chặn tốt HS lười, không thay coi thi.
@@ -43,7 +40,6 @@ export default function ExamEnginePage() {
     if (blockMsgRef.current) clearTimeout(blockMsgRef.current);
     blockMsgRef.current = setTimeout(() => setBlockMsg(""), 2500);
   }
-
   // Load exam data
   useEffect(() => {
     async function load() {
@@ -53,6 +49,7 @@ export default function ExamEnginePage() {
         const data = JSON.parse(cached);
         if (data.attemptId === attemptId) {
           setExam(data.exam);
+          setIsGraded(data.isGraded !== false);
           setQuestions(data.exam.questions || []);
           setAnswers(data.answers || {});
           setNotes(data.studentNotes || {});
@@ -69,6 +66,7 @@ export default function ExamEnginePage() {
         if (res.success) {
           const d = res.data;
           setExam(d.exam);
+          setIsGraded(d.isGraded !== false);
           setQuestions(d.exam.questions || []);
           setAnswers(d.answers || {});
           setNotes(d.studentNotes || {});
@@ -85,30 +83,25 @@ export default function ExamEnginePage() {
     }
     load();
   }, [attemptId, router]);
-
   // Timer — đếm ngược dựa trên startTime thực tế (chống F5)
   useEffect(() => {
     if (!startTime || !duration) return;
-
     function updateTimer() {
       const elapsed = Math.floor((Date.now() - startTime!.getTime()) / 1000);
       const remaining = duration * 60 - elapsed;
       setTimeLeft(Math.max(0, remaining));
       if (remaining <= 0) { handleAutoSubmit(); }
     }
-
     updateTimer();
     timerRef.current = setInterval(updateTimer, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [startTime, duration]);
-
   // Auto-save mỗi 30 giây
   useEffect(() => {
     if (!exam) return;
     autoSaveRef.current = setInterval(() => { doAutoSave(); }, 30000);
     return () => { if (autoSaveRef.current) clearInterval(autoSaveRef.current); };
   }, [exam, answers, notes]);
-
   async function doAutoSave() {
     try {
       setAutoSaveStatus("Đang lưu...");
@@ -118,27 +111,26 @@ export default function ExamEnginePage() {
       setAutoSaveStatus("Lỗi lưu!");
     }
   }
-
   function setAnswer(questionId: string, value: any) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }
-
   function setNote(questionId: string, value: string) {
     setNotes((prev) => ({ ...prev, [questionId]: value }));
   }
-
   async function handleAutoSubmit() {
     if (submitting) return;
     setSubmitting(true);
     try {
       const data = await api.post(`/student/attempts/${attemptId}/submit`, { answers, studentNotes: notes });
       if (data.success) {
-        alert(`Hết giờ! Bài đã được nộp tự động.\nĐiểm: ${data.data.score}/${data.data.totalScore}`);
+        const msg = data.data.isGraded === false
+          ? `Hết giờ! Đã nộp (lượt ôn tập — không tính điểm).`
+          : `Hết giờ! Bài đã được nộp tự động.\nĐiểm: ${data.data.score}/${data.data.totalScore}`;
+        alert(msg);
         router.push(`/lich-su/${attemptId}`);
       }
     } catch {} finally { setSubmitting(false); }
   }
-
   async function handleSubmit() {
     setShowConfirm(false); setSubmitting(true);
     try {
@@ -149,21 +141,17 @@ export default function ExamEnginePage() {
       }
     } catch {} finally { setSubmitting(false); }
   }
-
   // Format time
   function formatTime(seconds: number) {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
-
   if (loading || !exam) return <div className="flex min-h-screen items-center justify-center bg-navy"><Loader2 size={32} className="animate-spin text-gold" /></div>;
-
   const q = questions[currentQ];
   const answeredCount = Object.values(answers).filter((v) => v !== null && v !== undefined && v !== "").length;
-  const isUrgent = timeLeft < 300; // Dưới 5 phút → đỏ
+  const isUrgent = timeLeft < 60; // Dưới 1 phút → đỏ
   const qIsHtml = q ? isHtmlContent(q.content) : false;
-
   return (
     <div className="flex h-screen select-none flex-col bg-[#0f1520]"
       onCopy={blockAction} onCut={blockAction} onPaste={blockAction}
@@ -176,14 +164,12 @@ export default function ExamEnginePage() {
         .exam-html td, .exam-html th { overflow-wrap: anywhere; }
         .exam-html img, .exam-html iframe, .exam-html video { max-width: 100%; }
       `}</style>
-
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-white/10 bg-navy px-5 py-3">
         <div className="flex items-center gap-3">
           <h1 className="text-sm font-bold text-white truncate max-w-[300px]">{exam.title}</h1>
           <span className="rounded bg-white/10 px-2 py-0.5 text-[0.65rem] text-silver">{answeredCount}/{questions.length} câu</span>
         </div>
-
         <div className="flex items-center gap-4">
           <span className="text-[0.65rem] text-silver/60">{autoSaveStatus}</span>
           <button onClick={doAutoSave} className="rounded p-1.5 text-silver hover:bg-white/10 hover:text-white"><Save size={15} /></button>
@@ -195,7 +181,12 @@ export default function ExamEnginePage() {
           </button>
         </div>
       </div>
-
+      {/* Banner lượt ôn tập (bài không tính điểm) */}
+      {!isGraded && (
+        <div className="bg-amber-500/15 px-5 py-2 text-center text-xs font-medium text-amber-300">
+          Lượt ôn tập — bài này sẽ không tính vào điểm chính thức của bạn.
+        </div>
+      )}
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Question navigation sidebar */}
@@ -213,7 +204,6 @@ export default function ExamEnginePage() {
             })}
           </div>
         </div>
-
         {/* Question content */}
         <div className="flex-1 overflow-y-auto p-6">
           {q && (
@@ -226,7 +216,6 @@ export default function ExamEnginePage() {
                   <StickyNote size={15} />
                 </button>
               </div>
-
               {/* Media (audio/image) */}
               {q.mediaUrl && (
                 <div className="mb-4">
@@ -237,7 +226,6 @@ export default function ExamEnginePage() {
                   )}
                 </div>
               )}
-
               {/* Question content — đề HTML hiện trên nền trắng (HTML của GV giả định nền sáng, chữ #222) */}
               {qIsHtml ? (
                 <div className="mb-6 overflow-x-auto rounded-xl bg-white p-5">
@@ -246,7 +234,6 @@ export default function ExamEnginePage() {
               ) : (
                 <div className="mb-6 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">{q.content}</div>
               )}
-
               {/* Note input */}
               {showNote && (
                 <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-3">
@@ -255,7 +242,6 @@ export default function ExamEnginePage() {
                     placeholder="Ghi chú từ khóa, ý chính..." className="exam-input w-full rounded bg-navy/50 px-3 py-2 text-sm text-gray-200 placeholder-silver/40 outline-none" />
                 </div>
               )}
-
               {/* Answer area by type */}
               {q.type === "MULTIPLE_CHOICE" && Array.isArray(q.options) && (
                 <div className="space-y-2.5">
@@ -275,17 +261,14 @@ export default function ExamEnginePage() {
                   })}
                 </div>
               )}
-
               {q.type === "FILL_IN_BLANK" && (
                 <input value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value)}
                   placeholder="Nhập đáp án..." className="exam-input w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-gold" />
               )}
-
               {q.type === "ESSAY" && (
                 <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value)} rows={8}
                   placeholder="Viết bài của bạn ở đây..." className="exam-input w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-gold" />
               )}
-
               {/* Navigation */}
               <div className="mt-8 flex items-center justify-between">
                 <button onClick={() => setCurrentQ((p) => Math.max(0, p - 1))} disabled={currentQ === 0}
@@ -301,14 +284,12 @@ export default function ExamEnginePage() {
           )}
         </div>
       </div>
-
       {/* Cảnh báo khi HS thử copy/paste */}
       {blockMsg && (
         <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-red-600/95 px-4 py-2.5 text-sm font-medium text-white shadow-xl">
           <Ban size={15} />{blockMsg}
         </div>
       )}
-
       {/* Submit confirmation modal */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
@@ -317,6 +298,11 @@ export default function ExamEnginePage() {
               <AlertTriangle size={24} className="text-amber-500" />
               <h3 className="text-lg font-bold text-[#1a1a2e]">Nộp bài?</h3>
             </div>
+            {!isGraded && (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Đây là <strong>lượt ôn tập</strong> — kết quả sẽ không tính vào điểm chính thức.
+              </p>
+            )}
             <p className="text-sm text-muted">
               Bạn đã trả lời <strong>{answeredCount}/{questions.length}</strong> câu.
               {answeredCount < questions.length && <span className="text-amber-600"> Còn {questions.length - answeredCount} câu chưa trả lời.</span>}
