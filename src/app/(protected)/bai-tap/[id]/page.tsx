@@ -29,6 +29,7 @@ export default function DoExercisePage() {
     api.get(`/interactive/${id}`)
       .then((res) => { if (res.success) setExercise(res.data); })
       .finally(() => setLoading(false));
+    api.post(`/interactive/${id}/view`, {}).catch(() => {});   // ghi nhận HS mở bài (đếm mở-không-làm)
   }, [id]);
   // Bài có bật timer hoặc giới hạn lượt?
   const hasLimits = !!exercise && (exercise.timeLimit != null || exercise.maxAttempts != null);
