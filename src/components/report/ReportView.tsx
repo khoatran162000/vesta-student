@@ -29,9 +29,21 @@ export interface ReportViewData {
   grid?: { columns?: { key: string; label: string; maroon?: boolean }[]; units: any[] };
   teacherNote?: { strengths?: string; reminders?: string; homework?: string; attitude?: string } | null;
   html?: string | null;       // NEW
+  imageUrl?: string | null;   // NEW: report dạng ảnh
   shareUrl?: string | null;   // NEW
 }
 export default function ReportView({ data }: { data: ReportViewData }) {
+  // ─── Nhánh 0: report dạng ẢNH (up hàng loạt) ───
+  if (data.imageUrl && data.imageUrl.trim()) {
+    const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "");
+    const src = data.imageUrl.startsWith("http") ? data.imageUrl : `${base}${data.imageUrl}`;
+    return (
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <img src={src} alt="Báo cáo định kỳ"
+          style={{ width: "100%", height: "auto", display: "block", borderRadius: 12, border: "1px solid #E5E7EB", boxShadow: "0 2px 16px rgba(0,0,0,.08)", background: "#fff" }} />
+      </div>
+    );
+  }
   // ─── Nhánh 1: report dạng HTML dán → iframe cách ly ───
   if (data.html && data.html.trim()) {
     return (
