@@ -7,7 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
   TrendingUp, Target, NotebookPen, FileText, MessageSquareText,
-  PlayCircle, CalendarDays, GraduationCap
+  PlayCircle, CalendarDays, GraduationCap,
+  CalendarCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,6 +19,7 @@ const BASE_NAV = [
 const TAIL_NAV = [
   { href: "/de-thi", label: "Luyện Kĩ Năng", icon: BookOpen },
   { href: "/lich-su", label: "Điểm Tích Lũy", icon: ClipboardList },
+  { href: "/diem-danh", label: "Điểm Danh", icon: CalendarCheck },
   { href: "/thong-bao", label: "Thông báo", icon: Bell },
   { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
 ];
