@@ -33,7 +33,7 @@ export default function LoginPage() {
           {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-royal">Mã học viên</label>
-            <input type="text" value={studentCode} onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+            <input type="text" value={studentCode} onChange={(e) => setStudentCode(e.target.value.trim())}
               placeholder="VD: VS20250001" required className="input-field font-mono tracking-wider" />
           </div>
           <div>
