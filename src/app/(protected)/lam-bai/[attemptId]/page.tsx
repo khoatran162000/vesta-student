@@ -4,10 +4,20 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, Save, Send, AlertTriangle, ChevronLeft, ChevronRight, Loader2, StickyNote, Ban } from "lucide-react";
 import { api, getImageUrl } from "@/lib/api";
+import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
+
 // Nội dung câu hỏi có thẻ HTML? → hiện trên "tờ giấy" trắng cho dễ đọc
 function isHtmlContent(s: string) {
   return /<[a-z][\s\S]*>/i.test(s || "");
 }
+// Câu có nhiều gap (LearnClick)? → render bằng GapPlayer thay vì input đơn
+function questionGaps(q: any): Record<string, PlayerGap> | null {
+  const g = q?.gaps;
+  if (!g) return null;
+  const obj = typeof g === "string" ? JSON.parse(g) : g;
+  return obj && typeof obj === "object" && Object.keys(obj).length > 0 ? obj : null;
+}
+
 export default function ExamEnginePage() {
   const params = useParams();
   const attemptId = params.attemptId as string;
@@ -149,8 +159,16 @@ export default function ExamEnginePage() {
   }
   if (loading || !exam) return <div className="flex min-h-screen items-center justify-center bg-navy"><Loader2 size={32} className="animate-spin text-gold" /></div>;
   const q = questions[currentQ];
-  const answeredCount = Object.values(answers).filter((v) => v !== null && v !== undefined && v !== "").length;
+  // Câu đã trả lời? Với câu gap, answers[id] là object → coi là đã trả lời nếu có ít nhất 1 ô điền
+  function isAnswered(qq: any): boolean {
+    const a = answers[qq?.id];
+    if (a === null || a === undefined || a === "") return false;
+    if (typeof a === "object") return Object.values(a).some((v) => v !== null && v !== undefined && String(v).trim() !== "");
+    return true;
+  }
+  const answeredCount = questions.filter((qq) => isAnswered(qq)).length;
   const isUrgent = timeLeft < 60; // Dưới 1 phút → đỏ
+  const gapMap = q ? questionGaps(q) : null;
   const qIsHtml = q ? isHtmlContent(q.content) : false;
   return (
     <div className="flex h-screen select-none flex-col bg-[#0f1520]"
@@ -193,12 +211,12 @@ export default function ExamEnginePage() {
         <div className="w-[70px] shrink-0 overflow-y-auto border-r border-white/10 bg-navy/80 p-2">
           <div className="grid grid-cols-2 gap-1.5">
             {questions.map((_: any, i: number) => {
-              const isAnswered = answers[questions[i].id] !== undefined && answers[questions[i].id] !== "" && answers[questions[i].id] !== null;
+              const answered = isAnswered(questions[i]);
               const isCurrent = i === currentQ;
               return (
                 <button key={i} onClick={() => setCurrentQ(i)}
                   className={`flex h-8 w-8 items-center justify-center rounded text-xs font-semibold transition-colors ${
-                    isCurrent ? "bg-gold text-navy" : isAnswered ? "bg-green-600 text-white" : "bg-white/10 text-silver hover:bg-white/20"
+                    isCurrent ? "bg-gold text-navy" : answered ? "bg-green-600 text-white" : "bg-white/10 text-silver hover:bg-white/20"
                   }`}>{i + 1}</button>
               );
             })}
@@ -207,7 +225,7 @@ export default function ExamEnginePage() {
         {/* Question content */}
         <div className="flex-1 overflow-y-auto p-6">
           {q && (
-            <div className={`mx-auto ${qIsHtml ? "max-w-[1100px]" : "max-w-[700px]"}`}>
+            <div className={`mx-auto ${(qIsHtml || gapMap) ? "max-w-[1100px]" : "max-w-[700px]"}`}>
               {/* Question header */}
               <div className="mb-4 flex items-center gap-2">
                 <span className="rounded bg-gold/20 px-3 py-1 text-sm font-bold text-gold">Câu {currentQ + 1}/{questions.length}</span>
@@ -226,13 +244,27 @@ export default function ExamEnginePage() {
                   )}
                 </div>
               )}
-              {/* Question content — đề HTML hiện trên nền trắng (HTML của GV giả định nền sáng, chữ #222) */}
-              {qIsHtml ? (
-                <div className="mb-6 overflow-x-auto rounded-xl bg-white p-5">
-                  <div className="exam-html text-sm text-[#1a1a2e]" dangerouslySetInnerHTML={{ __html: q.content }} />
+              {/* Câu NHIỀU GAP: GapPlayer render cả nội dung + các ô (đừng render content thô ở đây) */}
+              {gapMap ? (
+                <div className="mb-6 overflow-x-auto rounded-xl bg-white p-5 text-[#1a1a2e]">
+                  <GapPlayer
+                    content={q.content}
+                    gaps={gapMap}
+                    answers={(answers[q.id] && typeof answers[q.id] === "object") ? answers[q.id] : {}}
+                    onChange={(a) => setAnswer(q.id, a)}
+                  />
                 </div>
               ) : (
-                <div className="mb-6 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">{q.content}</div>
+                <>
+                  {/* Question content — đề HTML hiện trên nền trắng */}
+                  {qIsHtml ? (
+                    <div className="mb-6 overflow-x-auto rounded-xl bg-white p-5">
+                      <div className="exam-html text-sm text-[#1a1a2e]" dangerouslySetInnerHTML={{ __html: q.content }} />
+                    </div>
+                  ) : (
+                    <div className="mb-6 whitespace-pre-wrap text-sm leading-relaxed text-gray-200">{q.content}</div>
+                  )}
+                </>
               )}
               {/* Note input */}
               {showNote && (
@@ -242,8 +274,8 @@ export default function ExamEnginePage() {
                     placeholder="Ghi chú từ khóa, ý chính..." className="exam-input w-full rounded bg-navy/50 px-3 py-2 text-sm text-gray-200 placeholder-silver/40 outline-none" />
                 </div>
               )}
-              {/* Answer area by type */}
-              {q.type === "MULTIPLE_CHOICE" && Array.isArray(q.options) && (
+              {/* Answer area by type — CHỈ khi KHÔNG phải câu gap */}
+              {!gapMap && q.type === "MULTIPLE_CHOICE" && Array.isArray(q.options) && (
                 <div className="space-y-2.5">
                   {q.options.map((opt: string, i: number) => {
                     const selected = JSON.stringify(answers[q.id]) === JSON.stringify(opt);
@@ -261,11 +293,11 @@ export default function ExamEnginePage() {
                   })}
                 </div>
               )}
-              {q.type === "FILL_IN_BLANK" && (
+              {!gapMap && q.type === "FILL_IN_BLANK" && (
                 <input value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value)}
                   placeholder="Nhập đáp án..." className="exam-input w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-gold" />
               )}
-              {q.type === "ESSAY" && (
+              {!gapMap && q.type === "ESSAY" && (
                 <textarea value={answers[q.id] || ""} onChange={(e) => setAnswer(q.id, e.target.value)} rows={8}
                   placeholder="Viết bài của bạn ở đây..." className="exam-input w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-gold" />
               )}
