@@ -1,14 +1,18 @@
 // FILE: src/app/(protected)/bai-tap/[id]/page.tsx — HV làm bài (gap LearnClick + tương thích bài cũ + timer/giới hạn lượt)
+// Đợt 2: chặn xem đáp án khi < 80%, thông điệp làm lại, đếm số lần nộp (< 7).
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Loader2, CheckCircle2, XCircle, Send, RotateCcw, Trophy, Clock, Play,
+  ArrowLeft, Loader2, CheckCircle2, XCircle, Send, RotateCcw, Trophy, Clock, Play, Eye, Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
 import MatchingPlayer, { MatchingData } from "@/components/exercise/MatchingPlayer";
+
+const PASS_THRESHOLD = 80;   // % tối thiểu để được mở đáp án
+
 export default function DoExercisePage() {
   const { id } = useParams();
   const router = useRouter();
@@ -17,6 +21,8 @@ export default function DoExercisePage() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [revealed, setRevealed] = useState(false);      // đã bấm "Xem đáp án" chưa (chỉ khi ≥80%)
+  const [submitCount, setSubmitCount] = useState(0);    // số lần nộp trong phiên này (client)
   // ── Phiên có giới hạn (start→submit) ──
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [attemptGraded, setAttemptGraded] = useState(true);
@@ -74,6 +80,8 @@ export default function DoExercisePage() {
     setSubmitting(false);
     if (res.success) {
       setResult(res.data);
+      setRevealed(false);                 // mỗi lần nộp, đáp án mặc định ẩn
+      setSubmitCount((n) => n + 1);       // đếm số lần nộp
       if (timerRef.current) clearInterval(timerRef.current);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (!auto) {
@@ -89,6 +97,9 @@ export default function DoExercisePage() {
   function handleRetry() {
     setAnswers({});
     setResult(null);
+    setRevealed(false);
+    // giữ submitCount để HS biết đã nộp bao nhiêu lần
+    if (hasLimits) { setStarted(false); setAttemptId(null); }  // bài có giới hạn: quay lại màn bắt đầu
   }
   function formatTime(s: number) {
     const m = Math.floor(s / 60);
@@ -124,6 +135,13 @@ export default function DoExercisePage() {
   }
   const attemptsLeft: number | null = exercise.attemptsLeft ?? null;
   const isUrgent = timeLeft < 60; // <1 phút → đỏ
+
+  // ── Điểm + điều kiện mở đáp án ──
+  const score: number = result?.score ?? 0;
+  const passed = score >= PASS_THRESHOLD;
+  // Chỉ lộ đáp án (truyền result cho player) khi ĐÃ nộp, ĐẠT ngưỡng, VÀ đã bấm "Xem đáp án"
+  const showAnswers = !!result && passed && revealed;
+
   // ── Màn chờ "Bắt đầu làm bài" cho bài CÓ giới hạn (chưa start, chưa có kết quả) ──
   if (hasLimits && !started && !result) {
     const outOfGraded = attemptsLeft != null && attemptsLeft <= 0;
@@ -194,22 +212,45 @@ export default function DoExercisePage() {
       )}
       {/* Kết quả sau khi nộp */}
       {result && (
-        <div className="card mb-6 bg-gradient-to-br from-gold/10 to-amber-50 text-center">
-          <Trophy size={36} className="mx-auto mb-2 text-gold" />
-          <p className="text-3xl font-bold text-royal">{result.score}%</p>
+        <div className={`card mb-6 text-center ${passed ? "bg-gradient-to-br from-green-50 to-emerald-50" : "bg-gradient-to-br from-amber-50 to-orange-50"}`}>
+          <Trophy size={36} className={`mx-auto mb-2 ${passed ? "text-green-500" : "text-amber-500"}`} />
+          <p className={`text-3xl font-bold ${passed ? "text-green-700" : "text-amber-700"}`}>{score}%</p>
           <p className="text-sm text-muted">
             Đúng {result.correct}/{result.total}
             {result.isGraded === false ? " — lượt ôn tập, không tính điểm" : " — điểm đã được lưu"}
             {result.autoSubmitted ? " · hết giờ tự nộp" : ""}
           </p>
-          {/* Ẩn "Làm lại" khi bài có giới hạn lượt */}
-          {!hasLimits && (
-            <button onClick={handleRetry} className="btn-secondary mt-4">
-              <RotateCcw size={14} />Làm lại
-            </button>
-          )}
-          {hasLimits && (
-            <Link href="/bai-tap" className="btn-secondary mt-4 inline-flex">← Về danh sách bài tập</Link>
+          <p className="mt-1 text-xs text-muted">Lần nộp thứ {submitCount}{submitCount >= 7 ? " — bạn đã nộp khá nhiều lần rồi!" : ""}</p>
+
+          {passed ? (
+            <>
+              {/* ĐẠT ≥80% → cho mở đáp án */}
+              {!revealed ? (
+                <button onClick={() => setRevealed(true)} className="btn-primary mt-4">
+                  <Eye size={15} />Xem đáp án
+                </button>
+              ) : (
+                <p className="mt-3 text-sm font-medium text-green-700">Đáp án đã hiển thị bên dưới. Xem lại các ô để rút kinh nghiệm nhé!</p>
+              )}
+              {!hasLimits && (
+                <button onClick={handleRetry} className="btn-secondary ml-2 mt-4">
+                  <RotateCcw size={14} />Làm lại
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {/* DƯỚI 80% → không cho xem đáp án, bắt làm lại */}
+              <div className="mx-auto mt-4 max-w-[520px] rounded-xl border border-amber-300 bg-white/70 px-4 py-3 text-left">
+                <div className="mb-1 flex items-center gap-1.5 font-bold text-amber-700"><Lock size={15} />Chưa mở được đáp án</div>
+                <p className="text-sm leading-relaxed text-amber-800">
+                  BẠN CỐ GẮNG SUY NGHĨ KĨ, TRA TỪ HỌC LẠI TỪ THÊM TRƯỚC KHI LÀM LẠI BÀI. KHI BẠN ĐẠT 80%, BẠN MỚI CÓ THỂ MỞ ĐÁP ÁN. CỐ GẮNG HẠN CHẾ SỐ LẦN NỘP BÀI DƯỚI 7 BẠN NHÉ.
+                </p>
+              </div>
+              <button onClick={handleRetry} className="btn-primary mt-4">
+                <RotateCcw size={14} />Làm lại bài
+              </button>
+            </>
           )}
         </div>
       )}
@@ -222,17 +263,17 @@ export default function DoExercisePage() {
             distractors={Array.isArray(exercise.distractors) ? exercise.distractors : []}
             answers={answers}
             onChange={setAnswers}
-            result={result}
+            result={showAnswers ? result : null}
           />
         </div>
       ) : isMatching ? (
         <div className="card">
-          <MatchingPlayer data={matchingData} answers={answers} onChange={setAnswers} result={result} />
+          <MatchingPlayer data={matchingData} answers={answers} onChange={setAnswers} result={showAnswers ? result : null} />
         </div>
       ) : (
         <div className="space-y-4">
           {questions.map((q: any, i: number) => {
-            const detail = result?.detail?.find((d: any) => d.id === q.id);
+            const detail = showAnswers ? result?.detail?.find((d: any) => d.id === q.id) : null;
             return (
               <div key={q.id} className="card">
                 <div className="mb-3 flex items-start gap-2">
