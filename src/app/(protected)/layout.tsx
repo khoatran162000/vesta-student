@@ -70,10 +70,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen bg-cream">
       <aside className="print:hidden sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-silver/30 bg-white">
-        <div className="border-b border-silver/20 px-5 py-5">
+        {/* Bấm logo → về Tổng quan (dashboard) */}
+        <Link href="/dashboard" className="group block border-b border-silver/20 px-5 py-5 transition-colors hover:bg-cream" title="Về Tổng quan">
           <p className="text-xl font-bold text-royal">VESTA</p>
-          <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-muted">Student Portal</p>
-        </div>
+          <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-muted group-hover:text-royal">Student Portal</p>
+        </Link>
 
         <div className="border-b border-silver/20 px-5 py-3">
           <p className="truncate text-sm font-semibold text-[#1a1a2e]">{user.fullName}</p>
