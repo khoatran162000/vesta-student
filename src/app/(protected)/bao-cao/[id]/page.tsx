@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Printer, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { printHtmlReport } from "@/lib/printReport";
 import ReportView from "@/components/report/ReportView";
 
 export default function ViewReportPage() {
@@ -32,7 +33,7 @@ export default function ViewReportPage() {
         <Link href="/bao-cao" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-royal">
           <ArrowLeft size={15} />Quay lại
         </Link>
-        <button onClick={() => window.print()} className="btn-primary">
+        <button onClick={() => printHtmlReport(data?.html)} className="btn-primary">
           <Printer size={15} />In báo cáo
         </button>
       </div>
