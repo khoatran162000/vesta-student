@@ -8,9 +8,9 @@ export function printHtmlReport(html?: string | null) {
   const w = window.open("", "_blank", "width=1200,height=1400");
   if (!w) { alert("Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup cho trang này rồi thử lại."); return; }
 
-  const DESIGN_W = 1100;                       // bề rộng thiết kế report (px)
-  const PRINT_W = 720;                         // vùng in A4 dọc (~190mm) @96dpi
-  const zoom = Math.min(1, PRINT_W / DESIGN_W); // ~0.65; không phóng to nếu report vốn hẹp
+  const DESIGN_W = 960;                         // bề rộng thiết kế report (px) — hạ để report phóng to vừa khổ
+  const PRINT_W = 720;                          // vùng in A4 dọc (~190mm) @96dpi
+  const zoom = Math.min(1, PRINT_W / DESIGN_W); // ~0.75; không phóng quá 1
 
   w.document.open();
   w.document.write(src);
