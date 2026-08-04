@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   BookOpen, Target, Trophy, Bell,
   TrendingUp, NotebookPen, FileText, MessageSquareText,
-  PlayCircle, CalendarDays, ArrowRight,
+  PlayCircle, CalendarDays, ArrowRight, ClipboardList, GraduationCap,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,8 @@ export default function DashboardPage() {
     { href: "/nhat-ky", label: "Nhật ký buổi học", icon: NotebookPen, color: "bg-amber-50 text-amber-600", desc: "Nội dung từng buổi + BTVN" },
     { href: "/tai-lieu", label: "Tài liệu", icon: FileText, color: "bg-green-50 text-green-600", desc: "Slide, Padlet, video" },
     { href: "/vo-ghi", label: "Vở ghi & Phản hồi", icon: MessageSquareText, color: "bg-pink-50 text-pink-600", desc: "Nộp bài, nhận chấm của GV" },
+    { href: "/bao-cao", label: "Báo cáo định kỳ", icon: ClipboardList, color: "bg-indigo-50 text-indigo-600", desc: "Nhận xét & điểm định kỳ từ GV" },
+    { href: "/cuoi-khoa", label: "Kết quả cuối khóa", icon: GraduationCap, color: "bg-rose-50 text-rose-600", desc: "Báo cáo tổng kết cuối khóa" },
   ];
   const unpaidLinks = [
     { href: "/hoc-thu", label: "Học thử", icon: PlayCircle, color: "bg-blue-50 text-blue-600", desc: "Trải nghiệm bài giảng demo" },
