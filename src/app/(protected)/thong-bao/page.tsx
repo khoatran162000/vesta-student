@@ -48,7 +48,7 @@ export default function NotificationsPage() {
                     <p className="text-sm font-semibold text-royal">{n.title}</p>
                     <span className="text-xs text-muted">{new Date(n.createdAt).toLocaleDateString("vi-VN")}</span>
                   </div>
-                  <p className="mt-1 text-sm text-muted">{n.message}</p>
+                  <div className="notif-html mt-1 text-sm text-muted" dangerouslySetInnerHTML={{ __html: n.message || "" }} />
                   <div className="mt-1 flex items-center justify-between">
                     <span className="inline-block rounded bg-cream-dark px-2 py-0.5 text-[0.6rem] text-muted">
                       {n.type === "SYSTEM_AUTO" ? "Hệ thống" : "Giáo viên"}
