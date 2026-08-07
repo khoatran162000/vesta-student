@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, Loader2, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
+import CopyGuard from "@/components/CopyGuard";
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -31,7 +32,7 @@ export default function NotificationsPage() {
           <button onClick={handleReadAll} className="btn-secondary text-xs"><CheckCheck size={13} />Đọc tất cả</button>
         )}
       </div>
-      <div className="card !p-0 overflow-hidden">
+      <CopyGuard className="card !p-0 overflow-hidden">
         {notifications.length === 0 ? (
           <div className="py-16 text-center"><Bell size={32} className="mx-auto mb-3 text-silver" /><p className="text-muted">Chưa có thông báo.</p></div>
         ) : (
@@ -64,7 +65,7 @@ export default function NotificationsPage() {
             })}
           </div>
         )}
-      </div>
+      </CopyGuard>
     </div>
   );
 }

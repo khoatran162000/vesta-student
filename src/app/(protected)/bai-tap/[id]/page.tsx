@@ -10,6 +10,7 @@ import {
 import { api } from "@/lib/api";
 import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
 import MatchingPlayer, { MatchingData } from "@/components/exercise/MatchingPlayer";
+import CopyGuard from "@/components/CopyGuard";
 
 const PASS_THRESHOLD = 80;   // % tối thiểu để được mở đáp án
 
@@ -254,7 +255,8 @@ export default function DoExercisePage() {
           )}
         </div>
       )}
-      {/* ─── BÀI GAP ─── */}
+      {/* ─── BÀI GAP ─── (bọc chống copy; ô đáp án vẫn gõ được) */}
+      <CopyGuard>
       {isGapEx ? (
         <div className="card">
           <GapPlayer
@@ -324,6 +326,7 @@ export default function DoExercisePage() {
           })}
         </div>
       )}
+      </CopyGuard>
       {/* Nút nộp */}
       {!result && (
         <button onClick={handleSubmit} disabled={submitting || answeredCount === 0}

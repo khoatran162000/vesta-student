@@ -7,6 +7,7 @@ import { ArrowLeft, Printer, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { printHtmlReport } from "@/lib/printReport";
 import FinalReportView from "@/components/report/FinalReportView";
+import CopyGuard from "@/components/CopyGuard";
 
 export default function ViewFinalReportPage() {
   const params = useParams();
@@ -37,7 +38,7 @@ export default function ViewFinalReportPage() {
           <Printer size={15} />In báo cáo
         </button>
       </div>
-      <FinalReportView data={data} />
+      <CopyGuard><FinalReportView data={data} /></CopyGuard>
     </div>
   );
 }
