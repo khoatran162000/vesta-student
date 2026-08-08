@@ -1,10 +1,34 @@
 // FILE: src/app/(protected)/thong-bao/page.tsx — Thong bao hoc vien
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, CheckCheck, Loader2, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import CopyGuard from "@/components/CopyGuard";
+
+// HTML "nguyên trang" (có <html>/<!doctype>/<style>) → render iframe cách ly để giữ font/CSS
+function isFullHtml(s: string) {
+  return /<html[\s>]/i.test(s) || /<!doctype/i.test(s) || /<style[\s>]/i.test(s);
+}
+function NotifBody({ html }: { html: string }) {
+  const ref = useRef<HTMLIFrameElement | null>(null);
+  const full = isFullHtml(html || "");
+  useEffect(() => {
+    if (!full) return;
+    const f = ref.current;
+    if (!f) return;
+    const fit = () => { try { const d = f.contentDocument; if (d) f.style.height = (d.documentElement.scrollHeight + 8) + "px"; } catch {} };
+    f.addEventListener("load", fit);
+    const t = setTimeout(fit, 300);
+    return () => { f.removeEventListener("load", fit); clearTimeout(t); };
+  }, [full, html]);
+  if (!full) return <div className="notif-html mt-1 text-sm text-muted" dangerouslySetInnerHTML={{ __html: html || "" }} />;
+  return (
+    <iframe ref={ref} title="tb" srcDoc={html} sandbox="allow-same-origin"
+      className="mt-2 w-full rounded-lg border border-silver/20 bg-white" style={{ height: 120 }} />
+  );
+}
+
 export default function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -49,7 +73,7 @@ export default function NotificationsPage() {
                     <p className="text-sm font-semibold text-royal">{n.title}</p>
                     <span className="text-xs text-muted">{new Date(n.createdAt).toLocaleDateString("vi-VN")}</span>
                   </div>
-                  <div className="notif-html mt-1 text-sm text-muted" dangerouslySetInnerHTML={{ __html: n.message || "" }} />
+                  <NotifBody html={n.message || ""} />
                   <div className="mt-1 flex items-center justify-between">
                     <span className="inline-block rounded bg-cream-dark px-2 py-0.5 text-[0.6rem] text-muted">
                       {n.type === "SYSTEM_AUTO" ? "Hệ thống" : "Giáo viên"}
