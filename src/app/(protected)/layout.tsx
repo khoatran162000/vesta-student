@@ -43,6 +43,9 @@ const UNPAID_NAV = [
   { href: "/lich-khai-giang", label: "Lịch khai giảng", icon: CalendarDays },
 ];
 
+// HS chi dung dich vu cham bai (GRADING_ONLY): chi Tong quan + Thong bao + Ho so
+const GRADING_NAV: { href: string; label: string; icon: any }[] = [];
+
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const pathname = usePathname() || "";
@@ -65,8 +68,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   if (pathname.startsWith("/lam-bai/")) return <>{children}</>;
 
   // Gộp menu theo trạng thái thanh toán
-  const courseMenu = user.isPaid ? PAID_NAV : UNPAID_NAV;
-  const NAV = [...BASE_NAV, ...courseMenu, ...TAIL_NAV];
+  const isGradingOnly = user.regStatus === "GRADING_ONLY";
+  const courseMenu = isGradingOnly ? GRADING_NAV : (user.isPaid ? PAID_NAV : UNPAID_NAV);
+  const tailMenu = isGradingOnly
+    ? TAIL_NAV.filter((m) => m.href === "/thong-bao" || m.href === "/ho-so")
+    : TAIL_NAV;
+  const NAV = [...BASE_NAV, ...courseMenu, ...tailMenu];
 
   return (
     <div className="flex min-h-screen bg-cream">
