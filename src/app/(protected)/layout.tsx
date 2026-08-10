@@ -26,6 +26,7 @@ const TAIL_NAV = [
 
 // Mục dành cho học viên ĐÃ thanh toán (5 tab)
 const PAID_NAV = [
+  { href: "/lich-lam-bai", label: "Lịch làm bài", icon: CalendarDays },
   { href: "/lo-trinh", label: "Lộ trình", icon: TrendingUp },
   { href: "/ki-nang", label: "Tích lũy kĩ năng", icon: Target },
   { href: "/nhat-ky", label: "Nhật ký buổi học", icon: NotebookPen },
