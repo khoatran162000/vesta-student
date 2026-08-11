@@ -1,7 +1,7 @@
 // FILE: src/app/(protected)/layout.tsx — GHI ĐÈ
 // Sidebar động: paid → 5 mục học + 4 mục gốc; unpaid → 2 mục học + 4 mục gốc
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
   CalendarCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 
 // Mục chung cho mọi học viên
 const BASE_NAV = [
@@ -51,6 +52,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const { user, loading, logout } = useAuth();
   const pathname = usePathname() || "";
   const router = useRouter();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    api.get("/student/notifications").then((r: any) => { if (r?.success) setUnread(r.unreadCount || 0); }).catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/dang-nhap");
@@ -108,7 +114,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[0.82rem] font-medium transition-colors ${
                   active ? "bg-royal/8 text-royal" : "text-muted hover:bg-cream hover:text-royal"
                 }`}>
-                <item.icon size={17} />{item.label}
+                <item.icon size={17} />{item.label}{item.href === "/thong-bao" && unread > 0 && (<span className="ml-auto min-w-[18px] rounded-full bg-red-500 px-1.5 text-center text-[0.6rem] font-bold leading-[18px] text-white">{unread}</span>)}
               </Link>
             );
           })}
