@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
   TrendingUp, Target, NotebookPen, FileText, MessageSquareText,
-  PlayCircle, CalendarDays, GraduationCap,
+  PlayCircle, CalendarDays, GraduationCap, BookOpenCheck,
   CalendarCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ const TAIL_NAV = [
 
 // Mục dành cho học viên ĐÃ thanh toán (5 tab)
 const PAID_NAV = [
+  { href: "/huong-dan-buoi-dau", label: "Hướng dẫn buổi đầu", icon: BookOpenCheck },
   { href: "/lich-lam-bai", label: "Lịch làm bài", icon: CalendarDays },
   { href: "/lo-trinh", label: "Lộ trình", icon: TrendingUp },
   { href: "/ki-nang", label: "Tích lũy kĩ năng", icon: Target },
