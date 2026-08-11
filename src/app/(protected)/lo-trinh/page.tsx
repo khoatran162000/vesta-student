@@ -46,13 +46,22 @@ export default function RoadmapPage() {
     sessionsByWeek[week].push(d);
   });
 
-  // Tuần hiện tại = tuần có buổi gần ngày hôm nay nhất
   const today = new Date();
-  let currentWeek = 1;
-  for (const d of diaries) {
-    if (new Date(d.date) <= today) currentWeek = Math.ceil(d.session / 2);
-  }
   const totalWeeks = Math.max(15, Object.keys(sessionsByWeek).length);
+  // Tuần hiện tại THEO CÁ NHÂN: tính từ ngày bắt đầu học của HV (không dùng lịch lớp),
+  // để HV mới không bị hiển thị như đã học tới giữa khóa.
+  let currentWeek = 1;
+  const startRaw = (user as any)?.startDate;
+  if (startRaw) {
+    const start = new Date(startRaw);
+    const weeksElapsed = Math.floor((today.getTime() - start.getTime()) / (7 * 86400000)) + 1;
+    currentWeek = Math.min(totalWeeks, Math.max(1, weeksElapsed));
+  } else {
+    // Fallback: theo lịch lớp (cũ) nếu thiếu startDate
+    for (const d of diaries) {
+      if (new Date(d.date) <= today) currentWeek = Math.ceil(d.session / 2);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-[900px]">
