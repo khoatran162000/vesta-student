@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
-  TrendingUp, Target, NotebookPen, FileText,
+  TrendingUp, Target, NotebookPen, FileText, MessageSquareText,
   PlayCircle, CalendarDays, GraduationCap, BookOpenCheck,
   CalendarCheck
 } from "lucide-react";
@@ -35,6 +35,7 @@ const PAID_NAV = [
   { href: "/ket-qua", label: "Kết quả định kỳ & cuối khóa", icon: GraduationCap },
   { href: "/nhat-ky-diem-danh", label: "Nhật ký & Điểm danh", icon: NotebookPen },
   { href: "/tai-lieu", label: "Tài liệu", icon: FileText },
+  { href: "/tam-su", label: "Tâm sự với Vesta", icon: MessageSquareText },
   { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
 ];
 
