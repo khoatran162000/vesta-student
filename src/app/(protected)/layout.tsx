@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
-  TrendingUp, Target, NotebookPen, FileText, MessageSquareText,
+  TrendingUp, Target, NotebookPen, FileText,
   PlayCircle, CalendarDays, GraduationCap, BookOpenCheck,
   CalendarCheck
 } from "lucide-react";
@@ -27,16 +27,15 @@ const TAIL_NAV = [
 
 // Mục dành cho học viên ĐÃ thanh toán (5 tab)
 const PAID_NAV = [
+  { href: "/thong-bao", label: "Thông báo", icon: Bell },
   { href: "/huong-dan-buoi-dau", label: "Hướng dẫn buổi đầu", icon: BookOpenCheck },
   { href: "/lich-lam-bai", label: "Lịch làm bài", icon: CalendarDays },
   { href: "/lo-trinh", label: "Lộ trình", icon: TrendingUp },
-  { href: "/ki-nang", label: "Tích lũy kĩ năng", icon: Target },
-  { href: "/nhat-ky", label: "Nhật ký buổi học", icon: NotebookPen },
+  { href: "/bai-tap-tich-luy", label: "Bài tập tích lũy", icon: Target },
+  { href: "/ket-qua", label: "Kết quả định kỳ & cuối khóa", icon: GraduationCap },
+  { href: "/nhat-ky-diem-danh", label: "Nhật ký & Điểm danh", icon: NotebookPen },
   { href: "/tai-lieu", label: "Tài liệu", icon: FileText },
-  { href: "/bai-tap", label: "Bài tập tương tác", icon: Target },
-  { href: "/vo-ghi", label: "Vở ghi & Phản hồi", icon: MessageSquareText },
-  { href: "/bao-cao", label: "Báo cáo định kỳ", icon: ClipboardList },
-  { href: "/cuoi-khoa", label: "Kết quả cuối khóa", icon: GraduationCap },
+  { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
 ];
 
 // Mục dành cho học viên CHƯA thanh toán (2 tab)
@@ -76,11 +75,12 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   // Gộp menu theo trạng thái thanh toán
   const isGradingOnly = user.regStatus === "GRADING_ONLY";
-  const courseMenu = isGradingOnly ? GRADING_NAV : (user.isPaid ? PAID_NAV : UNPAID_NAV);
-  const tailMenu = isGradingOnly
-    ? TAIL_NAV.filter((m) => m.href === "/thong-bao" || m.href === "/ho-so")
-    : TAIL_NAV;
-  const NAV = [...BASE_NAV, ...courseMenu, ...tailMenu];
+  // Menu paid: PAID_NAV đã gồm Thông báo + Hồ sơ; unpaid/grading giữ như cũ.
+  const NAV = isGradingOnly
+    ? [...BASE_NAV, ...GRADING_NAV, ...TAIL_NAV.filter((m) => m.href === "/thong-bao" || m.href === "/ho-so")]
+    : user.isPaid
+    ? [...BASE_NAV, ...PAID_NAV]
+    : [...BASE_NAV, ...UNPAID_NAV, ...TAIL_NAV];
 
   return (
     <div className="flex min-h-screen bg-cream">
