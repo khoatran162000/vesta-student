@@ -26,6 +26,7 @@ interface Props {
   gaps: Record<string, PlayerGap>;
   distractors?: string[];
   result?: { detail: GapDetail[] } | null;  // sau khi nộp
+  reveal?: boolean;                          // true = cho xem ĐÁP ÁN ĐÚNG (≥80% + bấm xem)
   answers: Record<string, string>;
   onChange: (answers: Record<string, string>) => void;
 }
@@ -70,7 +71,7 @@ function buildHostHtml(content: string): { html: string; isHtml: boolean } {
   );
   return { html, isHtml };
 }
-export default function GapPlayer({ content, gaps, distractors = [], result, answers, onChange }: Props) {
+export default function GapPlayer({ content, gaps, distractors = [], result, reveal = false, answers, onChange }: Props) {
   const submitted = !!result;
   const detailMap = useMemo(() => {
     const m: Record<string, GapDetail> = {};
@@ -146,9 +147,12 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
     return (
       <span className="inline-flex items-center align-baseline">
         {field}
-        {/* Gợi ý CHỈ hiện khi GV tự nhập (g.hint có nội dung) — máy không tự sinh */}
-        {!submitted && g.hint && g.hint.trim() && <HintButton hint={g.hint} />}
-        {submitted && !d?.isCorrect && (d?.correctAnswers?.length ?? 0) > 0 && (
+        {/* Gợi ý: trước khi nộp = nút 💡; sau khi nộp & ô SAI = hiện gợi ý luôn */}
+        {g.hint && g.hint.trim() && (!submitted || !d?.isCorrect) && (
+          <HintButton hint={g.hint} inline={submitted && !d?.isCorrect} />
+        )}
+        {/* Đáp án ĐÚNG chỉ hiện khi được phép xem (≥80% + bấm Xem đáp án) */}
+        {reveal && !d?.isCorrect && (d?.correctAnswers?.length ?? 0) > 0 && (
           <span className="ml-1 text-xs font-medium text-green-600">({d!.correctAnswers[0]})</span>
         )}
       </span>
@@ -187,8 +191,11 @@ export default function GapPlayer({ content, gaps, distractors = [], result, ans
   );
 }
 // ─── Nút gợi ý 💡 cạnh gap (chỉ khi GV nhập hint) ───
-function HintButton({ hint }: { hint: string }) {
+function HintButton({ hint, inline }: { hint: string; inline?: boolean }) {
   const [show, setShow] = useState(false);
+  if (inline) {
+    return <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[0.7rem] font-medium text-amber-800">💡 {hint}</span>;
+  }
   return (
     <span className="relative mx-0.5 inline-flex">
       <button type="button" onClick={() => setShow((s) => !s)}

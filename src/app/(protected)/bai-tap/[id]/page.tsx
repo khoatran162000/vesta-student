@@ -96,7 +96,7 @@ export default function DoExercisePage() {
     await doSubmit(false);
   }
   function handleRetry() {
-    setAnswers({});
+    // Giữ nguyên đáp án đã điền để HS sửa các ô SAI rồi nộp lại (không xoá hết).
     setResult(null);
     setRevealed(false);
     // giữ submitCount để HS biết đã nộp bao nhiêu lần
@@ -265,7 +265,8 @@ export default function DoExercisePage() {
             distractors={Array.isArray(exercise.distractors) ? exercise.distractors : []}
             answers={answers}
             onChange={setAnswers}
-            result={showAnswers ? result : null}
+            result={result}
+            reveal={showAnswers}
           />
         </div>
       ) : isMatching ? (
