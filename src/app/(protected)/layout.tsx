@@ -34,6 +34,7 @@ const PAID_NAV = [
   { href: "/bai-tap-tich-luy", label: "Bài tập tích lũy", icon: Target },
   { href: "/ket-qua", label: "Kết quả định kỳ & cuối khóa", icon: GraduationCap },
   { href: "/nhat-ky-diem-danh", label: "Nhật ký & Điểm danh", icon: NotebookPen },
+  { href: "/de-thi", label: "Luyện đề", icon: BookOpenCheck },
   { href: "/tam-su", label: "Tâm sự với Vesta", icon: MessageSquareText },
   { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
 ];
