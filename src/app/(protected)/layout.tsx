@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
   TrendingUp, Target, NotebookPen, MessageSquareText,
   PlayCircle, CalendarDays, GraduationCap, BookOpenCheck,
-  CalendarCheck
+  CalendarCheck, ClipboardCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -46,7 +46,9 @@ const UNPAID_NAV = [
 ];
 
 // HS chi dung dich vu cham bai (GRADING_ONLY): chi Tong quan + Thong bao + Ho so
-const GRADING_NAV: { href: string; label: string; icon: any }[] = [];
+const GRADING_NAV: { href: string; label: string; icon: any }[] = [
+  { href: "/bai-cham", label: "Bài chấm", icon: ClipboardCheck },
+];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
