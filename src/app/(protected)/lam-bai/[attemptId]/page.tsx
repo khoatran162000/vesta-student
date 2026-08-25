@@ -2,7 +2,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Clock, Save, Send, AlertTriangle, ChevronLeft, ChevronRight, Loader2, StickyNote, Ban } from "lucide-react";
+import { Clock, Save, Send, AlertTriangle, ChevronLeft, ChevronRight, Loader2, StickyNote, Ban, LogOut } from "lucide-react";
 import { api, getImageUrl } from "@/lib/api";
 import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
 
@@ -141,6 +141,12 @@ export default function ExamEnginePage() {
       }
     } catch {} finally { setSubmitting(false); }
   }
+  async function handleExit() {
+    if (!confirm("Thoát khỏi bài làm? Bài của bạn đã được lưu, có thể vào làm tiếp sau.")) return;
+    try { await api.put(`/student/attempts/${attemptId}/save`, { answers, studentNotes: notes }); } catch {}
+    router.push("/dashboard");
+  }
+
   async function handleSubmit() {
     setShowConfirm(false); setSubmitting(true);
     try {
@@ -194,6 +200,9 @@ export default function ExamEnginePage() {
           <div className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-lg font-bold ${isUrgent ? "bg-red-500/20 text-red-400 animate-pulse" : "bg-white/10 text-gold"}`}>
             <Clock size={16} />{formatTime(timeLeft)}
           </div>
+          <button onClick={handleExit} className="rounded-lg border border-white/25 px-3 py-1.5 text-sm font-medium text-silver hover:bg-white/10 hover:text-white">
+            <LogOut size={14} className="mr-1.5 inline" />Thoát
+          </button>
           <button onClick={() => setShowConfirm(true)} className="rounded-lg bg-green-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-green-700">
             <Send size={14} className="mr-1.5 inline" />Nộp bài
           </button>

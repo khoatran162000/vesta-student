@@ -45,6 +45,14 @@ const UNPAID_NAV = [
   { href: "/lich-khai-giang", label: "Lịch khai giảng", icon: CalendarDays },
 ];
 
+const TEST_NAV = [
+  { href: "/thong-bao", label: "Thông báo", icon: Bell },
+  { href: "/ket-qua", label: "Kết quả định kỳ & cuối khóa", icon: GraduationCap },
+  { href: "/nhat-ky-diem-danh", label: "Nhật ký & Điểm danh", icon: NotebookPen },
+  { href: "/de-thi", label: "Luyện đề", icon: BookOpenCheck },
+  { href: "/tam-su", label: "Tâm sự với Vesta", icon: MessageSquareText },
+  { href: "/ho-so", label: "Hồ sơ", icon: UserCircle },
+];
 // HS chi dung dich vu cham bai (GRADING_ONLY): chi Tong quan + Thong bao + Ho so
 const GRADING_NAV: { href: string; label: string; icon: any }[] = [
   { href: "/bai-cham", label: "Bài chấm", icon: ClipboardCheck },
@@ -81,6 +89,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // Menu paid: PAID_NAV đã gồm Thông báo + Hồ sơ; unpaid/grading giữ như cũ.
   const NAV = isGradingOnly
     ? [...BASE_NAV, ...GRADING_NAV, ...TAIL_NAV.filter((m) => m.href === "/thong-bao" || m.href === "/ho-so")]
+    : user.regStatus === "TEST"
+    ? [...BASE_NAV, ...TEST_NAV]
     : user.isPaid
     ? [...BASE_NAV, ...PAID_NAV]
     : [...BASE_NAV, ...UNPAID_NAV, ...TAIL_NAV];
