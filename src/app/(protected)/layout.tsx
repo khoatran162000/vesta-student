@@ -89,7 +89,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   // Menu paid: PAID_NAV đã gồm Thông báo + Hồ sơ; unpaid/grading giữ như cũ.
   const NAV = isGradingOnly
     ? [...BASE_NAV, ...GRADING_NAV, ...TAIL_NAV.filter((m) => m.href === "/thong-bao" || m.href === "/ho-so")]
-    : user.regStatus === "TEST"
+    : (user.regStatus === "TEST" || (user.studentCode || "").toLowerCase().includes("test"))
     ? [...BASE_NAV, ...TEST_NAV]
     : user.isPaid
     ? [...BASE_NAV, ...PAID_NAV]
