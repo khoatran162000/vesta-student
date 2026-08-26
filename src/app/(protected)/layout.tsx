@@ -60,6 +60,29 @@ const GRADING_NAV: { href: string; label: string; icon: any }[] = [
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
+  // Chặn copy / chuột phải / kéo-thả toàn portal học viên (chống lộ đề). Chừa ô nhập; bỏ qua admin.
+  useEffect(() => {
+    if (!user || user.role === "ADMIN") return;
+    const style = document.createElement("style");
+    style.textContent = 'body{-webkit-user-select:none;user-select:none}input,textarea,select,[contenteditable="true"],[contenteditable=""]{-webkit-user-select:text !important;user-select:text !important}';
+    document.head.appendChild(style);
+    const block = (e: Event) => {
+      const t = e.target as HTMLElement | null;
+      if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+      e.preventDefault();
+    };
+    document.addEventListener("copy", block);
+    document.addEventListener("cut", block);
+    document.addEventListener("contextmenu", block);
+    document.addEventListener("dragstart", block);
+    return () => {
+      style.remove();
+      document.removeEventListener("copy", block);
+      document.removeEventListener("cut", block);
+      document.removeEventListener("contextmenu", block);
+      document.removeEventListener("dragstart", block);
+    };
+  }, [user]);
   const pathname = usePathname() || "";
   const router = useRouter();
   const [unread, setUnread] = useState(0);

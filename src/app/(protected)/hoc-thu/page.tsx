@@ -1,16 +1,16 @@
 // FILE: src/app/(protected)/hoc-thu/page.tsx — Học thử cho học viên chưa thanh toán
 "use client";
 import { useAuth } from "@/hooks/useAuth";
-import { PlayCircle, ExternalLink, MessageCircle } from "lucide-react";
+import { PlayCircle, ExternalLink, MessageCircle, Trophy } from "lucide-react";
 import Link from "next/link";
 
 // Tài liệu demo công khai (có thể đổi sang fetch từ API sau)
 const TRIAL_MATERIALS = [
   {
-    title: "Video giới thiệu phương pháp VESTA",
-    desc: "Tổng quan về lộ trình IELTS tại trung tâm",
-    url: "https://www.facebook.com/vestauni",
-    icon: PlayCircle,
+    title: "Thành tích học viên",
+    desc: "Xem thành tích & điểm số học viên VESTA trên Facebook",
+    url: "https://www.facebook.com/media/set/?set=a.10263144444164560&type=3",
+    icon: Trophy,
   },
   {
     title: "Bài giảng demo: Writing Task 2 - Argumentative",
