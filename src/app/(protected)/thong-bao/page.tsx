@@ -46,7 +46,7 @@ export default function NotificationsPage() {
   }
   if (loading) return <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-gold" /></div>;
   return (
-    <div className="mx-auto max-w-[700px]">
+    <div className="mx-auto max-w-[1200px]">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold text-royal">Thông báo</h1>
