@@ -11,7 +11,7 @@ const dowFull = (w: string) => DV[DS.indexOf(w)] || w;
 const fdShort = (s: string) => { const p = s.split("-"); return p[2] + "/" + p[1]; };
 const todayISO = () => { const d = new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); };
 
-export type Day = { d: string; w: string; h?: string; l?: string };
+export type Day = { d: string; w: string; h?: string; l?: string; n?: string };
 export type Week = { i: number; u: number; d: Day[] };
 export type Cls = { id: string; kg: string; r: string; w: Week[] };
 export type CalData = Record<string, Cls[]>;
@@ -97,7 +97,7 @@ export default function CalendarView({ data }: { data: CalData }) {
             <div className="wg">
               {wk.d.map((day) => {
                 const isToday = day.d === TODAY;
-                const hasContent = !!(day.h || day.l);
+                const hasContent = !!(day.h || day.l || day.n);
                 return (
                   <div key={day.d}
                     className={`dc${isToday ? " td" : ""}${hasContent ? "" : " empty"}`}
@@ -106,6 +106,7 @@ export default function CalendarView({ data }: { data: CalData }) {
                       <span className="dnum">{Number(day.d.split("-")[2])}</span>
                       <span className={`ddow ${dowClass(day.w)}`}>{day.w}</span>
                     </div>
+                    {day.n && <div style={{fontSize:"0.62rem",color:"#8a8f98",marginTop:"2px",lineHeight:1.2}}>{day.n}</div>}
                     <div className="dbd">
                       {day.h ? (<><div className="dhl">Bài luyện tại nhà</div><div className="dhc">{day.h}</div></>) : (<div className="dhc">—</div>)}
                     </div>
