@@ -12,7 +12,7 @@ export async function apiFetch<T = any>(endpoint: string, options: FetchOptions 
   }
   if (!(rest.body instanceof FormData)) headers["Content-Type"] = "application/json";
   const res = await fetch(`${API_URL}${endpoint}`, { ...rest, headers });
-  if (res.status === 401 && needsAuth) {
+  if (res.status === 401 && needsAuth && !endpoint.startsWith("/auth/")) {
     const refreshed = await tryRefreshToken();
     if (refreshed) {
       headers["Authorization"] = `Bearer ${localStorage.getItem("accessToken")}`;
