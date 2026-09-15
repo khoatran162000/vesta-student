@@ -56,7 +56,7 @@ export default function StudentExercisesPage() {
           <p className="text-sm text-muted">Chưa có bài tập nào dành cho bạn.</p>
         </div>
       ) : (
-{exercises.length > 0 && (
+        {exercises.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm bài…" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
           <button onClick={() => setLevelFilter("")} className={`rounded-full px-3 py-1 text-xs font-semibold ${!levelFilter ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
