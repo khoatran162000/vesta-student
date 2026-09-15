@@ -16,6 +16,8 @@ export default function StudentExercisesPage() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [attempts, setAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [levelFilter, setLevelFilter] = useState("");
+  const [q, setQ] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -54,8 +56,17 @@ export default function StudentExercisesPage() {
           <p className="text-sm text-muted">Chưa có bài tập nào dành cho bạn.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {exercises.map((ex) => {
+{exercises.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm bài…" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
+          <button onClick={() => setLevelFilter("")} className={`rounded-full px-3 py-1 text-xs font-semibold ${!levelFilter ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
+          {Array.from(new Set(exercises.map((e: any) => (String(e.title).match(/^\s*\[([^·\]]+)/) || [])[1]?.trim()).filter(Boolean))).map((lv: any) => (
+            <button key={lv} onClick={() => setLevelFilter(lv)} className={`rounded-full px-3 py-1 text-xs font-semibold ${levelFilter === lv ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>{lv}</button>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+          {exercises.filter((ex: any) => { const lv = (String(ex.title).match(/^\s*\[([^·\]]+)/) || [])[1]?.trim() || ""; return (!levelFilter || lv === levelFilter) && (!q || String(ex.title).toLowerCase().includes(q.toLowerCase())); }).map((ex) => {
             const done = bestScores[ex.id] != null;
             return (
               <div key={ex.id} className="card flex flex-col justify-between">
