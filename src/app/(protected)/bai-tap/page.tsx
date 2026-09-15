@@ -50,13 +50,7 @@ export default function StudentExercisesPage() {
         <p className="mt-1 text-sm text-muted">Luyện tập Quiz, điền chỗ trống, từ vựng — có chấm điểm tự động</p>
       </div>
 
-      {exercises.length === 0 ? (
-        <div className="card py-16 text-center">
-          <FileQuestion size={40} className="mx-auto mb-3 text-silver" />
-          <p className="text-sm text-muted">Chưa có bài tập nào dành cho bạn.</p>
-        </div>
-      ) : (
-        {exercises.length > 0 && (
+      {exercises.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm bài…" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
           <button onClick={() => setLevelFilter("")} className={`rounded-full px-3 py-1 text-xs font-semibold ${!levelFilter ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
@@ -65,7 +59,13 @@ export default function StudentExercisesPage() {
           ))}
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2">
+      {exercises.length === 0 ? (
+        <div className="card py-16 text-center">
+          <FileQuestion size={40} className="mx-auto mb-3 text-silver" />
+          <p className="text-sm text-muted">Chưa có bài tập nào dành cho bạn.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
           {exercises.filter((ex: any) => { const lv = (String(ex.title).match(/^\s*\[([^·\]]+)/) || [])[1]?.trim() || ""; return (!levelFilter || lv === levelFilter) && (!q || String(ex.title).toLowerCase().includes(q.toLowerCase())); }).map((ex) => {
             const done = bestScores[ex.id] != null;
             return (
