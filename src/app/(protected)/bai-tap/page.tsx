@@ -1,8 +1,8 @@
 // FILE: src/app/(protected)/bai-tap/page.tsx — HV xem danh sách bài tập tương tác
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { Target, Play, CheckCircle2, Loader2, FileQuestion } from "lucide-react";
+import { Target, Play, CheckCircle2, Loader2, FileQuestion, ArrowDownAZ, Clock } from "lucide-react";
 import { api } from "@/lib/api";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -12,12 +12,23 @@ const TYPE_LABELS: Record<string, string> = {
   VOCAB_CHECK: "Từ vựng",
 };
 
+// Khối của một bài = gộp nhãn LV: (mô tả) + các lớp được tick (visibleTo khi CLASS)
+function exKhoi(ex: any): string[] {
+  const tags = new Set<string>();
+  if (ex.level) tags.add(String(ex.level).trim());
+  if (ex.visibility === "CLASS" && ex.visibleTo) {
+    String(ex.visibleTo).split(",").map((s: string) => s.trim()).filter(Boolean).forEach((t: string) => tags.add(t));
+  }
+  return [...tags];
+}
+
 export default function StudentExercisesPage() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [attempts, setAttempts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [levelFilter, setLevelFilter] = useState("");
   const [q, setQ] = useState("");
+  const [sortMode, setSortMode] = useState<"recent" | "az">("recent");
 
   useEffect(() => {
     async function load() {
@@ -32,13 +43,33 @@ export default function StudentExercisesPage() {
     load();
   }, []);
 
-  // Map exerciseId → điểm cao nhất đã đạt
   const bestScores: Record<string, number> = {};
   attempts.forEach((a) => {
     if (a.score != null && (bestScores[a.exerciseId] == null || a.score > bestScores[a.exerciseId])) {
       bestScores[a.exerciseId] = a.score;
     }
   });
+
+  const khoiList = useMemo(() => {
+    const s = new Set<string>();
+    exercises.forEach((e) => exKhoi(e).forEach((k) => s.add(k)));
+    return [...s].sort((a, b) => a.localeCompare(b, "vi"));
+  }, [exercises]);
+  const hasUncat = exercises.some((e) => exKhoi(e).length === 0);
+
+  const shown = useMemo(() => {
+    const kw = q.trim().toLowerCase();
+    return exercises
+      .filter((ex) => {
+        const matchQ = !kw || String(ex.title).toLowerCase().includes(kw);
+        if (kw) return matchQ;
+        const khoi = exKhoi(ex);
+        return !levelFilter || (levelFilter === "__uncat__" ? khoi.length === 0 : khoi.includes(levelFilter));
+      })
+      .sort((a, b) => sortMode === "az"
+        ? String(a.title || "").localeCompare(String(b.title || ""), "vi")
+        : new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime());
+  }, [exercises, q, levelFilter, sortMode]);
 
   if (loading)
     return <div className="flex justify-center py-20"><Loader2 size={24} className="animate-spin text-gold" /></div>;
@@ -54,12 +85,15 @@ export default function StudentExercisesPage() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm bài…" className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm" />
           <button onClick={() => setLevelFilter("")} className={`rounded-full px-3 py-1 text-xs font-semibold ${!levelFilter ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>Tất cả</button>
-          {Array.from(new Set(exercises.map((e: any) => e.level).filter(Boolean))).map((lv: any) => (
+          {khoiList.map((lv) => (
             <button key={lv} onClick={() => setLevelFilter(lv)} className={`rounded-full px-3 py-1 text-xs font-semibold ${levelFilter === lv ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>{lv}</button>
           ))}
-          {exercises.some((e: any) => !e.level) && (
+          {hasUncat && (
             <button onClick={() => setLevelFilter("__uncat__")} className={`rounded-full px-3 py-1 text-xs font-semibold ${levelFilter === "__uncat__" ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}>Chưa phân loại</button>
           )}
+          <span className="mx-1 h-4 w-px bg-gray-300" />
+          <button onClick={() => setSortMode("recent")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${sortMode === "recent" ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}><Clock size={12} />Mới nhất</button>
+          <button onClick={() => setSortMode("az")} className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${sortMode === "az" ? "bg-[#1B2A5C] text-white" : "bg-gray-100 text-gray-600"}`}><ArrowDownAZ size={12} />A-Z</button>
         </div>
       )}
       {exercises.length === 0 ? (
@@ -69,7 +103,7 @@ export default function StudentExercisesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {exercises.filter((ex: any) => { const lv = ex.level || ""; return (!levelFilter || (levelFilter === "__uncat__" ? !lv : lv === levelFilter)) && (!q || String(ex.title).toLowerCase().includes(q.toLowerCase())); }).map((ex) => {
+          {shown.map((ex) => {
             const done = bestScores[ex.id] != null;
             return (
               <div key={ex.id} className="card flex flex-col justify-between">
