@@ -1,9 +1,10 @@
 // FILE: src/components/CopyGuard.tsx — Cản sao chép nội dung ở mức thao tác thường.
 // Chặn: bôi đen (user-select), chuột phải, copy/cut, và ⌘/Ctrl + C/X/S/P.
 // CHỪA: input / textarea / [contenteditable] (HS vẫn gõ & thao tác trong ô đáp án).
-// LƯU Ý: KHÔNG chặn được tuyệt đối (F12 / xem nguồn / chụp màn hình vẫn lấy được).
+// ADMIN/TEACHER: KHÔNG chặn (để dạy — bôi đen, copy thoải mái).
 "use client";
 import { useEffect, useRef } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 function inEditable(el: EventTarget | null): boolean {
   const node = el as HTMLElement | null;
@@ -12,18 +13,21 @@ function inEditable(el: EventTarget | null): boolean {
 }
 
 export default function CopyGuard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const { user } = useAuth();
+  const staff = user?.role === "ADMIN" || user?.role === "TEACHER";
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (staff) return;                         // nhân sự: không chặn
     const root = ref.current;
     if (!root) return;
 
     const block = (e: Event) => { if (!inEditable(e.target)) e.preventDefault(); };
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
-      if (inEditable(e.target)) return;              // trong ô nhập thì cho thao tác bình thường
+      if (inEditable(e.target)) return;
       const k = e.key.toLowerCase();
-      if (["c", "x", "s", "p"].includes(k)) e.preventDefault();  // copy/cut/save/print
+      if (["c", "x", "s", "p"].includes(k)) e.preventDefault();
     };
 
     root.addEventListener("copy", block);
@@ -38,21 +42,22 @@ export default function CopyGuard({ children, className = "" }: { children: Reac
       root.removeEventListener("dragstart", block);
       root.removeEventListener("keydown", onKey);
     };
-  }, []);
+  }, [staff]);
+
+  // ADMIN/TEACHER: trả thẳng nội dung, không bọc khóa chọn
+  if (staff) return <>{children}</>;
 
   return (
     <div
       ref={ref}
       className={`copy-guard ${className}`}
       style={{
-        // chặn bôi đen; ô nhập được mở lại bằng CSS bên dưới
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         userSelect: "none",
         WebkitTouchCallout: "none",
       }}
     >
-      {/* Mở lại chọn/tương tác cho ô nhập bên trong vùng bị khóa */}
       <style>{`
         .copy-guard input,
         .copy-guard textarea,

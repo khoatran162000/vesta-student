@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, ClipboardList, Bell, UserCircle, LogOut,
   TrendingUp, Target, NotebookPen, MessageSquareText,
   PlayCircle, CalendarDays, GraduationCap, BookOpenCheck,
-  CalendarCheck, ClipboardCheck
+  CalendarCheck, ClipboardCheck, Menu, PanelLeftClose
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
@@ -62,7 +62,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const { user, loading, logout } = useAuth();
   // Chặn copy / chuột phải / kéo-thả toàn portal học viên (chống lộ đề). Chừa ô nhập; bỏ qua admin.
   useEffect(() => {
-    if (!user || user.role === "ADMIN") return;
+    if (!user || user.role === "ADMIN" || user.role === "TEACHER") return;
     const style = document.createElement("style");
     style.textContent = 'body{-webkit-user-select:none;user-select:none}input,textarea,select,[contenteditable="true"],[contenteditable=""]{-webkit-user-select:text !important;user-select:text !important}';
     document.head.appendChild(style);
@@ -86,6 +86,11 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   const pathname = usePathname() || "";
   const router = useRouter();
   const [unread, setUnread] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => { try { setCollapsed(localStorage.getItem("vesta_sidebar_collapsed") === "1"); } catch {} }, []);
+  function toggleSidebar() {
+    setCollapsed((c) => { const nv = !c; try { localStorage.setItem("vesta_sidebar_collapsed", nv ? "1" : "0"); } catch {} return nv; });
+  }
   useEffect(() => {
     if (!user) return;
     api.get("/student/notifications").then((r: any) => { if (r?.success) setUnread(r.unreadCount || 0); }).catch(() => {});
@@ -120,12 +125,24 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-cream">
-      <aside className="print:hidden sticky top-0 flex h-screen w-[220px] shrink-0 flex-col border-r border-silver/30 bg-white">
-        {/* Bấm logo → về Tổng quan (dashboard) */}
-        <Link href="/dashboard" className="group block border-b border-silver/20 px-5 py-5 transition-colors hover:bg-cream" title="Về Tổng quan">
-          <p className="text-xl font-bold text-royal">VESTA</p>
-          <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-muted group-hover:text-royal">Student Portal</p>
-        </Link>
+      {collapsed && (
+        <button onClick={toggleSidebar} title="Hiện menu"
+          className="print:hidden fixed left-3 top-3 z-50 rounded-lg border border-silver/40 bg-white p-2 text-royal shadow hover:bg-cream">
+          <Menu size={18} />
+        </button>
+      )}
+      <aside className={`print:hidden sticky top-0 ${collapsed ? "hidden" : "flex"} h-screen w-[220px] shrink-0 flex-col border-r border-silver/30 bg-white`}>
+        {/* Logo → Tổng quan; nút ẩn menu bên phải */}
+        <div className="flex items-center justify-between border-b border-silver/20 pr-2">
+          <Link href="/dashboard" className="group block flex-1 px-5 py-5 transition-colors hover:bg-cream" title="Về Tổng quan">
+            <p className="text-xl font-bold text-royal">VESTA</p>
+            <p className="text-[0.6rem] font-semibold uppercase tracking-widest text-muted group-hover:text-royal">Student Portal</p>
+          </Link>
+          <button onClick={toggleSidebar} title="Ẩn menu (làm bài full màn hình)"
+            className="rounded p-1.5 text-muted hover:bg-cream hover:text-royal">
+            <PanelLeftClose size={18} />
+          </button>
+        </div>
 
         <div className="border-b border-silver/20 px-5 py-3">
           <p className="truncate text-sm font-semibold text-[#1a1a2e]">{user.fullName}</p>
