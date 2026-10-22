@@ -1,7 +1,7 @@
 // FILE: src/components/exercise/GapPlayer.tsx
 // Render bài tập gap (LearnClick) cho học viên/khách làm + chấm + tô màu
 // content HỖ TRỢ CẢ HAI: HTML (bài dán từ LearnClick) hoặc text thuần (bài cũ) — tự nhận diện
-// Đợt 3: ô trống highlight vàng dễ nhìn; gợi ý CHỈ hiện khi GV tự nhập (g.hint).
+// Màu ô trống: xanh navy VESTA (#1B2A5C) thay cho vàng. editableAfterSubmit: cho sửa ô sai ngay sau khi nộp.
 "use client";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -29,6 +29,7 @@ interface Props {
   reveal?: boolean;                          // true = cho xem ĐÁP ÁN ĐÚNG (≥80% + bấm xem)
   answers: Record<string, string>;
   onChange: (answers: Record<string, string>) => void;
+  editableAfterSubmit?: boolean;             // true = cho sửa ô SAI ngay sau khi nộp (bài không giới hạn)
 }
 // ─── Một từ kéo được ───
 function DraggableWord({ id, label, used }: { id: string; label: string; used: boolean }) {
@@ -37,7 +38,7 @@ function DraggableWord({ id, label, used }: { id: string; label: string; used: b
   if (used) return null;
   return (
     <span ref={setNodeRef} style={style} {...listeners} {...attributes}
-      className={`inline-block cursor-grab rounded-lg border-2 border-amber-300 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800 select-none ${isDragging ? "opacity-50" : ""}`}>
+      className={`inline-block cursor-grab rounded-lg border-2 border-[#1B2A5C] bg-blue-50 px-3 py-1 text-sm font-medium text-[#1B2A5C] select-none ${isDragging ? "opacity-50" : ""}`}>
       {label}
     </span>
   );
@@ -47,11 +48,11 @@ function DropZone({ gapId, value, state }: { gapId: string; value: string; state
   const { setNodeRef, isOver } = useDroppable({ id: `drop-${gapId}` });
   const border = state === "correct" ? "border-green-400 bg-green-50"
     : state === "wrong" ? "border-red-400 bg-red-50"
-    : isOver ? "border-amber-500 bg-amber-100" : "border-amber-400 bg-amber-50";
+    : isOver ? "border-[#1B2A5C] bg-blue-100" : "border-[#1B2A5C] bg-blue-50";
   return (
     <span ref={setNodeRef}
       className={`mx-1 inline-flex min-w-[90px] items-center justify-center rounded-lg border-2 border-dashed px-3 py-1 text-sm font-medium ${border}`}>
-      {value || <span className="text-amber-500">kéo vào</span>}
+      {value || <span className="text-[#1B2A5C]">kéo vào</span>}
     </span>
   );
 }
@@ -71,7 +72,7 @@ function buildHostHtml(content: string): { html: string; isHtml: boolean } {
   );
   return { html, isHtml };
 }
-export default function GapPlayer({ content, gaps, distractors = [], result, reveal = false, answers, onChange }: Props) {
+export default function GapPlayer({ content, gaps, distractors = [], result, reveal = false, answers, onChange, editableAfterSubmit = false }: Props) {
   const submitted = !!result;
   const detailMap = useMemo(() => {
     const m: Record<string, GapDetail> = {};
@@ -93,8 +94,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [slots, setSlots] = useState<{ id: string; el: HTMLElement }[]>([]);
   // QUAN TRỌNG: bơm innerHTML THỦ CÔNG — KHÔNG dùng dangerouslySetInnerHTML.
-  // Nếu để React quản vùng này, mỗi lần nó dựng lại innerHTML là các span bị lìa khỏi DOM,
-  // portal cắm input vào span mồ côi → không hiện gì.
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -117,19 +116,22 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
   function renderField(id: string) {
     const g = gaps[id] || { type: "TEXT" as const };
     const d = detailMap[id];
-    const state: "" | "correct" | "wrong" = !submitted ? "" : d?.isCorrect ? "correct" : "wrong";
+    // HS đã sửa ô này sau khi nộp? -> coi như "đang nhập lại" (về trạng thái trung tính)
+    const changed = submitted && !!d && (answers[id] ?? "") !== (d.studentAnswer ?? "");
+    const locked = submitted && (!editableAfterSubmit || (!!d?.isCorrect && !changed));
+    const state: "" | "correct" | "wrong" = !submitted ? "" : (changed ? "" : (d?.isCorrect ? "correct" : "wrong"));
     const fieldColor = state === "correct" ? "border-green-400 bg-green-50 text-green-800"
       : state === "wrong" ? "border-red-400 bg-red-50 text-red-800"
       : "";
-    // Chưa nộp: ô trống nổi bật (nền vàng nhạt + viền vàng đậm + gạch chân) — không hoà nền
-    const idleText = "border-amber-400 bg-amber-50 underline decoration-amber-400 decoration-2 underline-offset-4 text-[#1a1a2e] placeholder-amber-400";
-    const idleSelect = "border-amber-400 bg-amber-50 text-[#1a1a2e]";
+    // Chưa nộp / đang nhập lại: ô trống xanh navy VESTA (nền xanh nhạt + viền navy + gạch chân)
+    const idleText = "border-[#1B2A5C] bg-blue-50 underline decoration-[#1B2A5C] decoration-2 underline-offset-4 text-[#1a1a2e] placeholder-slate-400";
+    const idleSelect = "border-[#1B2A5C] bg-blue-50 text-[#1a1a2e]";
     let field;
     if (g.type === "DROPDOWN") {
       field = (
-        <select disabled={submitted} value={answers[id] || ""}
+        <select disabled={locked} value={answers[id] || ""}
           onChange={(e) => setAns(id, e.target.value)}
-          className={`mx-1 rounded-md border-2 px-2 py-1 text-sm font-medium outline-none focus:border-amber-500 ${state ? fieldColor : idleSelect}`}>
+          className={`mx-1 rounded-md border-2 px-2 py-1 text-sm font-medium outline-none focus:border-[#1B2A5C] ${state ? fieldColor : idleSelect}`}>
           <option value="">— chọn —</option>
           {(g.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -138,20 +140,18 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
       field = <DropZone gapId={id} value={answers[id] || ""} state={state} />;
     } else {
       field = (
-        <input type="text" disabled={submitted} value={answers[id] || ""}
+        <input type="text" disabled={locked} value={answers[id] || ""}
           onChange={(e) => setAns(id, e.target.value)}
           placeholder="✎ …" size={Math.max(8, (answers[id]?.length || 8))}
-          className={`mx-1 rounded-md border-2 px-2 py-0.5 text-sm font-medium outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 ${state ? fieldColor : idleText}`} />
+          className={`mx-1 rounded-md border-2 px-2 py-0.5 text-sm font-medium outline-none focus:border-[#1B2A5C] focus:ring-2 focus:ring-blue-200 ${state ? fieldColor : idleText}`} />
       );
     }
     return (
       <span className="inline-flex items-center align-baseline">
         {field}
-        {/* Gợi ý: trước khi nộp = nút 💡; sau khi nộp & ô SAI = hiện gợi ý luôn */}
         {g.hint && g.hint.trim() && (!submitted || !d?.isCorrect) && (
           <HintButton hint={g.hint} inline={submitted && !d?.isCorrect} />
         )}
-        {/* Đáp án ĐÚNG chỉ hiện khi được phép xem (≥80% + bấm Xem đáp án) */}
         {reveal && !d?.isCorrect && (d?.correctAnswers?.length ?? 0) > 0 && (
           <span className="ml-1 text-xs font-medium text-green-600">({d!.correctAnswers[0]})</span>
         )}
@@ -162,7 +162,6 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
     <div className={isHtml ? "overflow-x-auto" : ""}>
       {isHtml && (
         <style>{`
-          /* HTML dán từ LearnClick fix cứng width="1300" → ép co vừa khung, hết lướt ngang. */
           .gap-html-body table { width: 100% !important; max-width: 100% !important; }
           .gap-html-body td, .gap-html-body th { overflow-wrap: anywhere; }
           .gap-html-body img, .gap-html-body iframe, .gap-html-body video { max-width: 100%; }
@@ -180,7 +179,7 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       {!submitted && wordBank.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2 rounded-xl border border-amber-200 bg-amber-50/40 p-3">
+        <div className="mb-4 flex flex-wrap gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3">
           {wordBank.map((w, idx) => (
             <DraggableWord key={idx} id={`word-${idx}-${w}`} label={w} used={usedWords.has(w)} />
           ))}
@@ -194,7 +193,7 @@ export default function GapPlayer({ content, gaps, distractors = [], result, rev
 function HintButton({ hint, inline }: { hint: string; inline?: boolean }) {
   const [show, setShow] = useState(false);
   if (inline) {
-    return <span className="ml-1 inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 align-middle text-[0.7rem] font-medium text-amber-800">💡 {hint}</span>;
+    return <span className="ml-1 inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 align-middle text-[0.7rem] font-medium text-[#1B2A5C]">💡 {hint}</span>;
   }
   return (
     <span className="relative mx-0.5 inline-flex">

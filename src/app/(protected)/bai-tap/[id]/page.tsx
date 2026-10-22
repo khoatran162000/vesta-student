@@ -72,7 +72,7 @@ export default function DoExercisePage() {
       alert(res.message || "Không bắt đầu được bài");
     }
   }
-  async function doSubmit(auto = false) {
+  async function doSubmit(auto = false, scroll = true) {
     if (submitting) return;
     setSubmitting(true);
     const body: any = { answers };
@@ -84,11 +84,13 @@ export default function DoExercisePage() {
       setRevealed(false);                 // mỗi lần nộp, đáp án mặc định ẩn
       setSubmitCount((n) => n + 1);       // đếm số lần nộp
       if (timerRef.current) clearInterval(timerRef.current);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if (scroll) window.scrollTo({ top: 0, behavior: "smooth" });
     } else if (!auto) {
       alert(res.message || "Lỗi nộp bài");
     }
   }
+  // Nộp lại sau khi sửa ô sai ngay tại chỗ (bài không giới hạn) — không cuộn lên để giữ vị trí đang sửa
+  async function handleResubmit() { await doSubmit(false, false); }
   const handleAutoSubmit = useCallback(() => { doSubmit(true); /* eslint-disable-next-line */ }, [answers, attemptId, submitting]);
   async function handleSubmit() {
     const missing = totalCount - answeredCount;
@@ -222,6 +224,9 @@ export default function DoExercisePage() {
             {result.autoSubmitted ? " · hết giờ tự nộp" : ""}
           </p>
           <p className="mt-1 text-xs text-muted">Lần nộp thứ {submitCount}{submitCount >= 7 ? " — bạn đã nộp khá nhiều lần rồi!" : ""}</p>
+          {!hasLimits && isGapEx && (
+            <p className="mt-2 text-xs font-semibold text-[#1B2A5C]">Sửa thẳng vào các ô màu đỏ rồi bấm &quot;Nộp lại&quot; bên dưới để chấm lại.</p>
+          )}
 
           {passed ? (
             <>
@@ -267,6 +272,7 @@ export default function DoExercisePage() {
             onChange={setAnswers}
             result={result}
             reveal={showAnswers}
+            editableAfterSubmit={!hasLimits}
           />
         </div>
       ) : isMatching ? (
@@ -334,6 +340,14 @@ export default function DoExercisePage() {
           className="btn-primary mt-6 w-full justify-center py-3.5 disabled:opacity-60">
           {submitting ? <><Loader2 size={16} className="animate-spin" />Đang nộp...</>
             : <><Send size={16} />Nộp bài ({answeredCount}/{totalCount})</>}
+        </button>
+      )}
+      {/* Sửa ô sai tại chỗ rồi chấm lại — bài không giới hạn */}
+      {result && !hasLimits && isGapEx && (
+        <button onClick={handleResubmit} disabled={submitting}
+          className="btn-primary mt-6 w-full justify-center py-3.5 disabled:opacity-60">
+          {submitting ? <><Loader2 size={16} className="animate-spin" />Đang chấm...</>
+            : <><Send size={16} />Nộp lại — chấm các ô vừa sửa</>}
         </button>
       )}
     </div>
