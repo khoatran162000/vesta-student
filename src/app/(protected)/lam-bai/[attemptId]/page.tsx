@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, Save, Send, AlertTriangle, ChevronLeft, ChevronRight, Loader2, StickyNote, Ban, LogOut } from "lucide-react";
 import { api, getImageUrl } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
 
 // Nội dung câu hỏi có thẻ HTML? → hiện trên "tờ giấy" trắng cho dễ đọc
@@ -22,6 +23,7 @@ export default function ExamEnginePage() {
   const params = useParams();
   const attemptId = params.attemptId as string;
   const router = useRouter();
+  const { user } = useAuth();
   const [exam, setExam] = useState<any>(null);
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -176,6 +178,12 @@ export default function ExamEnginePage() {
   const isUrgent = timeLeft < 60; // Dưới 1 phút → đỏ
   const gapMap = q ? questionGaps(q) : null;
   const qIsHtml = q ? isHtmlContent(q.content) : false;
+  const ADMIN_URL = "https://admin.vestaedu.online";
+  const isStaff = user?.role === "ADMIN" || user?.role === "TEACHER";
+  const examEditId = exam?.id || exam?.examId;
+  const staffEditBtn = isStaff && examEditId ? (
+    <a href={`${ADMIN_URL}/ngan-hang-de/de-thi/${examEditId}`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-[60] inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-amber-600">✏️ Sửa đề (admin)</a>
+  ) : null;
   return (
     <div className="flex h-screen select-none flex-col bg-[#0f1520]"
       onCopy={blockAction} onCut={blockAction} onPaste={blockAction}
@@ -188,6 +196,7 @@ export default function ExamEnginePage() {
         .exam-html td, .exam-html th { overflow-wrap: anywhere; }
         .exam-html img, .exam-html iframe, .exam-html video { max-width: 100%; }
       `}</style>
+      {staffEditBtn}
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-white/10 bg-navy px-5 py-3">
         <div className="flex items-center gap-3">

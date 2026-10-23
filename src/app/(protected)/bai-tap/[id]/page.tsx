@@ -8,6 +8,7 @@ import {
   ArrowLeft, Loader2, CheckCircle2, XCircle, Send, RotateCcw, Trophy, Clock, Play, Eye, Lock,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 import GapPlayer, { PlayerGap } from "@/components/exercise/GapPlayer";
 import MatchingPlayer, { MatchingData } from "@/components/exercise/MatchingPlayer";
 import CopyGuard from "@/components/CopyGuard";
@@ -17,6 +18,12 @@ const PASS_THRESHOLD = 80;   // % tối thiểu để được mở đáp án
 export default function DoExercisePage() {
   const { id } = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const ADMIN_URL = "https://admin.vestaedu.online";
+  const isStaff = user?.role === "ADMIN" || user?.role === "TEACHER";
+  const staffEditBtn = isStaff ? (
+    <a href={`${ADMIN_URL}/bai-tap/${id}/sua`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-[60] inline-flex items-center gap-1.5 rounded-full bg-royal px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-royal/90">✏️ Sửa (admin)</a>
+  ) : null;
   const [exercise, setExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -154,7 +161,7 @@ export default function DoExercisePage() {
           <ArrowLeft size={15} />Quay lại danh sách
         </Link>
         <div className="card text-center">
-          <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>
+          <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>{staffEditBtn}
           {exercise.description && <p className="mt-1 text-sm text-muted">{exercise.description}</p>}
           <div className="my-5 flex flex-wrap justify-center gap-3 text-sm">
             {timeLimit != null && (
@@ -201,7 +208,7 @@ export default function DoExercisePage() {
         <ArrowLeft size={15} />Quay lại danh sách
       </Link>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>
+        <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>{staffEditBtn}
         {exercise.description && <p className="mt-1 text-sm text-muted">{exercise.description}</p>}
         <p className="mt-1 text-xs text-muted">
           {totalCount} {isMatching ? "cặp nối" : (exercise.type === "MULTIPLE_CHOICE" || exercise.type === "QUIZ" || exercise.type === "VOCAB_CHECK") ? "câu hỏi" : "chỗ trống"}
