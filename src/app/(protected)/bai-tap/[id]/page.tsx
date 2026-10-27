@@ -21,9 +21,6 @@ export default function DoExercisePage() {
   const { user } = useAuth();
   const ADMIN_URL = "https://admin.vestaedu.online";
   const isStaff = user?.role === "ADMIN" || user?.role === "TEACHER";
-  const staffEditBtn = isStaff ? (
-    <a href={`${ADMIN_URL}/bai-tap/${id}/sua`} target="_blank" rel="noopener noreferrer" className="fixed bottom-5 right-5 z-[60] inline-flex items-center gap-1.5 rounded-full bg-royal px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-royal/90">✏️ Sửa (admin)</a>
-  ) : null;
   const [exercise, setExercise] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -161,7 +158,7 @@ export default function DoExercisePage() {
           <ArrowLeft size={15} />Quay lại danh sách
         </Link>
         <div className="card text-center">
-          <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>{staffEditBtn}
+          {isStaff ? (<a href={`${ADMIN_URL}/bai-tap/${id}/sua`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-2xl font-bold text-royal hover:underline" title="Bấm vào tên bài để sửa (chỉ admin)">{exercise.title}<span className="rounded bg-royal/10 px-1.5 py-0.5 text-xs font-semibold text-royal">✏️ Sửa</span></a>) : (<h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>)}
           {exercise.description && <p className="mt-1 text-sm text-muted">{exercise.description}</p>}
           <div className="my-5 flex flex-wrap justify-center gap-3 text-sm">
             {timeLimit != null && (
@@ -208,7 +205,7 @@ export default function DoExercisePage() {
         <ArrowLeft size={15} />Quay lại danh sách
       </Link>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>{staffEditBtn}
+        {isStaff ? (<a href={`${ADMIN_URL}/bai-tap/${id}/sua`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-2xl font-bold text-royal hover:underline" title="Bấm vào tên bài để sửa (chỉ admin)">{exercise.title}<span className="rounded bg-royal/10 px-1.5 py-0.5 text-xs font-semibold text-royal">✏️ Sửa</span></a>) : (<h1 className="text-2xl font-bold text-royal">{exercise.title}</h1>)}
         {exercise.description && <p className="mt-1 text-sm text-muted">{exercise.description}</p>}
         <p className="mt-1 text-xs text-muted">
           {totalCount} {isMatching ? "cặp nối" : (exercise.type === "MULTIPLE_CHOICE" || exercise.type === "QUIZ" || exercise.type === "VOCAB_CHECK") ? "câu hỏi" : "chỗ trống"}
