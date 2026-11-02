@@ -36,12 +36,44 @@ export default function DoExercisePage() {
   const [started, setStarted] = useState(false);
   const [starting, setStarting] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const ttsRef = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     api.get(`/interactive/${id}`)
       .then((res) => { if (res.success) setExercise(res.data); })
       .finally(() => setLoading(false));
     api.post(`/interactive/${id}/view`, {}).catch(() => {});   // ghi nhận HS mở bài (đếm mở-không-làm)
   }, [id]);
+  // Nút "▶ nghe" trong bài là link Google TTS mở tab mới → bắt click, phát NGAY TẠI CHỖ (lỗi thì đọc bằng giọng trình duyệt)
+  useEffect(() => {
+    function speakFallback(href: string) {
+      try {
+        const u = new URL(href);
+        const q = u.searchParams.get("q") || "";
+        const tl = u.searchParams.get("tl") || "en";
+        if (!q || !("speechSynthesis" in window)) return;
+        const ut = new SpeechSynthesisUtterance(q);
+        ut.lang = tl; ut.rate = 0.9;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(ut);
+      } catch {}
+    }
+    function onClick(e: MouseEvent) {
+      const t = e.target as HTMLElement | null;
+      const a = t && t.closest ? (t.closest("a") as HTMLAnchorElement | null) : null;
+      if (!a) return;
+      const href = a.getAttribute("href") || "";
+      if (!/translate_tts|\/\/translate\.google\./i.test(href)) return;
+      e.preventDefault(); e.stopPropagation();
+      try {
+        if (ttsRef.current) { ttsRef.current.pause(); }
+        const audio = new Audio(href);
+        ttsRef.current = audio;
+        audio.play().catch(() => speakFallback(href));
+      } catch { speakFallback(href); }
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
   // Bài có bật timer hoặc giới hạn lượt?
   const hasLimits = !!exercise && (exercise.timeLimit != null || exercise.maxAttempts != null);
   const timeLimit: number | null = exercise?.timeLimit ?? null;
